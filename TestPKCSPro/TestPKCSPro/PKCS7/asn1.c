@@ -652,6 +652,100 @@ DWORD   ber_encode_PRINTABLE_STRING(BOOL length_only,
 
 }
 
+DWORD   ber_encode_BIT_STRING(BOOL length_only,
+                              BYTE ** str,
+                              DWORD * str_len,
+                              BYTE * data,
+                              DWORD data_len)
+{
+    BYTE   *buf = NULL;
+    DWORD   len;
+    
+    // I only support Primitive encoding for PRINTABLE_STRING
+    //
+    
+    // if data_len < 128 use short-form length id
+    // if data_len < 256 use long-form length id with 1-byte length field
+    // if data_len < 65536 use long-form length id with 2-byte length field
+    //
+    
+    if (data_len < 128)
+        len = 1 + 1 + data_len;
+    else if (data_len < 256)
+        len = 1 + (1 + 1) + data_len;
+    else if (data_len < (1 << 16))
+        len = 1 + (1 + 2) + data_len;
+    else if (data_len < (1 << 24))
+        len = 1 + (1 + 3) + data_len;
+    else{
+        return DC_ERROR_FUNC_PARAM;
+    }
+    if (length_only == TRUE) {
+        *str_len = len;
+        return ERROR_SUCCESS;
+    }
+    
+    buf = (BYTE *)malloc( len );
+    if (!buf){
+        return DC_ERROR_MEMORY_ALLOC;
+    }
+    
+    if (data_len < 128) {
+        buf[0] = 0x03;       // primitive, PRINTABLE_STRING
+        buf[1] = (BYTE)(data_len & 0xFF);
+        memcpy( &buf[2], data, data_len );
+        
+        *str_len = len;
+        *str = buf;
+        return ERROR_SUCCESS;
+    }
+    
+    if (data_len < 256) {
+        buf[0] = 0x03;       // primitive, PRINTABLE_STRING
+        buf[1] = 0x81;       // length header -- 1 length octets
+        buf[2] = (BYTE)(data_len & 0xFF);
+        
+        memcpy( &buf[3], data, data_len );
+        
+        *str_len = len;
+        *str = buf;
+        return ERROR_SUCCESS;
+    }
+    
+    if (data_len < (1 << 16)) {
+        buf[0] = 0x03;       // primitive, PRINTABLE_STRING
+        buf[1] = 0x82;       // length header -- 2 length octets
+        buf[2] = (BYTE)((data_len >> 8) & 0xFF);
+        buf[3] = (BYTE)((data_len     ) & 0xFF);
+        
+        memcpy( &buf[4], data, data_len );
+        
+        *str_len = len;
+        *str = buf;
+        return ERROR_SUCCESS;
+    }
+    
+    if (data_len < (1 << 24)) {
+        buf[0] = 0x03;       // primitive, PRINTABLE_STRING
+        buf[1] = 0x83;       // length header -- 3 length octets
+        buf[2] = (BYTE)((data_len >> 16) & 0xFF);
+        buf[3] = (BYTE)((data_len >>  8) & 0xFF);
+        buf[4] = (BYTE)((data_len      ) & 0xFF);
+        
+        memcpy( &buf[5], data, data_len );
+        
+        *str_len = len;
+        *str = buf;
+        return ERROR_SUCCESS;
+    }
+    
+    // we should never reach this
+    //
+    free( buf );
+    return /*CKR_FUNCTION_FAILED*/-1;
+
+}
+
 //
 //
 DWORD

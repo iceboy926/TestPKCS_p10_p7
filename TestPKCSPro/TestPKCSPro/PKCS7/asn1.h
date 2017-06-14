@@ -34,12 +34,6 @@ DWORD ber_encode_INTEGER(BOOL length_only,
                             BYTE * data,
                             DWORD data_len);
 
-DWORD pass_bit_string(BYTE * ber_int,
-                         BYTE ** data,
-                         DWORD * data_len,
-                         DWORD * field_len);
-
-
 DWORD   ber_encode_OCTET_STRING(BOOL length_only,
                                 BYTE ** str,
                                 DWORD * str_len,
@@ -51,6 +45,12 @@ DWORD   ber_encode_PRINTABLE_STRING(BOOL length_only,
                                     DWORD * str_len,
                                     BYTE * data,
                                     DWORD data_len);
+    
+DWORD   ber_encode_BIT_STRING(BOOL length_only,
+                                        BYTE ** str,
+                                        DWORD * str_len,
+                                        BYTE * data,
+                                        DWORD data_len);
     
 
 DWORD ber_encode_OBJECT_IDENTIFIER(BOOL length_only,

@@ -6,177 +6,48 @@
 //  Copyright © 2017年 zuoyongyong. All rights reserved.
 //
 
-#include "asn1.h"
+
 #include <stdlib.h>
 #include <string.h>
-#include "global_def.h"
 #include "gzdercode.h"
+#include "sgnerinf.h"
 
-DWORD SM2_PubKeyToCFCA_Format
-(CHAR* szInput, DWORD dwInputLen, CHAR* szOutput, INT* pdwOutputLen)
+
+
+DWORD encodeVersion(BYTE *berVersion, DWORD *berVersionLen, BYTE *version, DWORD versionlen)
 {
-    SM2PUBLICKEYBLOB* pSM2pubkey = (SM2PUBLICKEYBLOB*)szInput;
-    DWORD dwBitLen = pSM2pubkey->BitLen;
-    DWORD dwCoordinateLen = dwBitLen/8;
-    BYTE* ber_int_x = NULL;
-    BYTE* ber_int_y = NULL;
-    BYTE* before_seq_buf = NULL;
-    DWORD ber_x_len = 0;
-    DWORD ber_y_len = 0;
-    DWORD ber_seq_len = 0;
-    DWORD dwTotalLen = 0;
-    DWORD dwRet = ERROR_SUCCESS;
-    BYTE *szDataOut = NULL;
-    DWORD dwDataOutLen = 0;
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
     
-    //获取x的ber编码长度
-    dwRet |= ber_encode_INTEGER
-    (TRUE, NULL, &ber_x_len, pSM2pubkey->XCoordinate+SM2_MODULUS_BITS_LEN/8, dwCoordinateLen);
-    dwTotalLen += ber_x_len;
+    BYTE *tmp = NULL;
     
-    //获取y的ber编码长度
-    dwRet |= ber_encode_INTEGER
-    (TRUE, NULL, &ber_y_len, pSM2pubkey->YCoordinate+SM2_MODULUS_BITS_LEN/8, dwCoordinateLen);
-    dwTotalLen += ber_y_len;
-    
-    //获取seq编码后的长度
-    dwRet |= ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, dwTotalLen);
-    if ((dwRet != ERROR_SUCCESS) || (ber_seq_len > 1024))
+    //获ber编码长度
+    rc = ber_encode_INTEGER(TRUE, NULL, &total, version, versionlen);
+    if (rc != ERROR_SUCCESS)
     {
-        goto end;
+        goto error;
     }
+    else
+        len += total;
     
-    before_seq_buf = (BYTE *)malloc(dwTotalLen);
-    dwTotalLen = 0;
-    
-    //对x编码
-    ber_int_x = (BYTE*)malloc(ber_x_len);
-    dwRet = ber_encode_INTEGER
-    (FALSE, &ber_int_x, &ber_x_len, pSM2pubkey->XCoordinate+SM2_MODULUS_BITS_LEN/8, dwCoordinateLen);
-    memcpy(before_seq_buf+dwTotalLen, ber_int_x, ber_x_len);
-    dwTotalLen += ber_x_len;
-    
-    //对y编码
-    ber_int_y = (BYTE*)malloc(ber_y_len);
-    dwRet = ber_encode_INTEGER
-    (FALSE, &ber_int_y, &ber_y_len, pSM2pubkey->YCoordinate+SM2_MODULUS_BITS_LEN/8, dwCoordinateLen);
-    memcpy(before_seq_buf+dwTotalLen, ber_int_y, ber_y_len);
-    dwTotalLen += ber_y_len;
-    
-    //对seq编码
-    dwRet = ber_encode_SEQUENCE(FALSE, &szDataOut, (DWORD*)&dwDataOutLen, before_seq_buf, dwTotalLen);
-    if (dwRet != ERROR_SUCCESS)
+    rc = ber_encode_INTEGER(FALSE, &tmp, &total, version, versionlen);
+    if (rc != ERROR_SUCCESS)
     {
-        goto end;
+        //st_err_log(76, __FILE__, __LINE__);
+        goto error;
     }
+    memcpy(berVersion, tmp, total);
+    *berVersionLen = total;
+    free(tmp);
+
     
-    *pdwOutputLen = dwDataOutLen;
+error:
     
-    memcpy(szOutput, szDataOut, dwDataOutLen);
-    
-end:
-    if (ber_int_x)
-    {
-        free(ber_int_x);
-    }
-    if (ber_int_y)
-    {
-        free(ber_int_y);
-    }
-    if (before_seq_buf)
-    {
-        free(before_seq_buf);
-    }
-    
-    return dwRet;
+    return rc;
 }
 
-DWORD SM2_SignDataToCFCA_Format
-(CHAR* szInput, DWORD dwInputLen, CHAR* szOutput, INT* pdwOutputLen)
-{
-    DWORD dwDataFieldLen = 32;
-    BYTE* ber_int_r = NULL;
-    BYTE* ber_int_s = NULL;
-    BYTE* before_seq_buf = NULL;
-    DWORD ber_r_len = 0;
-    DWORD ber_s_len = 0;
-    DWORD ber_seq_len = 0;
-    DWORD dwTotalLen = 0;
-    DWORD dwOffset = dwDataFieldLen; //0 or 128
-    DWORD dwRet = ERROR_SUCCESS;
-    
-    BYTE *szDataOut = NULL;
-    DWORD dwDataOutLen = 0;
-    
-    //获取r的ber编码长度
-    dwRet |= ber_encode_INTEGER
-    (TRUE, NULL, &ber_r_len, (BYTE*)szInput, dwDataFieldLen);
-    dwTotalLen += ber_r_len;
-    
-    //获取s的ber编码长度
-    dwRet |= ber_encode_INTEGER
-    (TRUE, NULL, &ber_s_len, (BYTE*)(szInput + dwOffset), dwDataFieldLen);
-    dwTotalLen += ber_s_len;
-    
-    //获取seq编码后的长度
-    dwRet |= ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, dwTotalLen);
-    if ((dwRet != ERROR_SUCCESS) || (ber_seq_len > 1024))
-    {
-        goto end;
-    }
-    
-    before_seq_buf = (BYTE*)malloc(dwTotalLen);
-    dwTotalLen = 0;
-    
-    //对r编码
-    ber_int_r = (BYTE*)malloc(ber_r_len);
-    dwRet = ber_encode_INTEGER
-    (FALSE, &ber_int_r, &ber_r_len, (BYTE*)szInput, dwDataFieldLen);
-    if (dwRet != ERROR_SUCCESS)
-    {
-        goto end;
-    }
-    memcpy(before_seq_buf+dwTotalLen, ber_int_r, ber_r_len);
-    dwTotalLen += ber_r_len;
-    
-    //对s编码
-    ber_int_s = (BYTE*)malloc(ber_s_len);
-    dwRet = ber_encode_INTEGER
-    (FALSE, &ber_int_s, &ber_s_len, (BYTE*)(szInput + dwOffset), dwDataFieldLen);
-    if (dwRet != ERROR_SUCCESS)
-    {
-        goto end;
-    }
-    memcpy(before_seq_buf+dwTotalLen, ber_int_s, ber_s_len);
-    dwTotalLen += ber_s_len;
-    
-    //对seq编码
-    dwRet = ber_encode_SEQUENCE(FALSE, &szDataOut, &dwDataOutLen, before_seq_buf, dwTotalLen);
-    if (dwRet != ERROR_SUCCESS)
-    {
-        goto end;
-    }
-    
-    *pdwOutputLen = dwDataOutLen;
-    memcpy(szOutput, szDataOut, dwDataOutLen);
-    
-end:
-    if (ber_int_r)
-    {
-        free(ber_int_r);
-    }
-    if (ber_int_s)
-    {
-        free(ber_int_s);
-    }
-    if (before_seq_buf)
-    {
-        free(before_seq_buf);
-    }
-    return dwRet;
-}
-
-DWORD encodeSubjectName(BYTE ** berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len)
+DWORD encodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *emaildata, DWORD emaildata_len)
 {
 
     DWORD total = 0;
@@ -185,98 +56,622 @@ DWORD encodeSubjectName(BYTE ** berSubjectName, DWORD *berSubjectNameLen, BYTE *
     DWORD ber_seq_len = 0;
     DWORD ber_set_len = 0;
     
+    DWORD cn_total = 0;
+    DWORD o_total = 0;
+    DWORD ou_total = 0;
+    DWORD c_total = 0;
+    DWORD email_total = 0;
+    
     BYTE* ber_set_cn = NULL;
     BYTE* ber_set_o = NULL;
     
     BYTE *buf = NULL;
     BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
     
     BYTE cn_OIDs[] = {0x55, 0x04, 0x03};
+    BYTE o_OIDs[] = {0x55, 0x04, 0x0A};
+    BYTE ou_OIDs[] = {0x55, 0x04, 0x0B};
+    BYTE c_OIDs[] = {0x55, 0x04, 0x06};
+    BYTE email_OIDs[] = {0x2a, 0x86, 0x48, 0x86, 0xF7, 0x0d, 0x01,0x09,0x01};
     
     
     //CN_OBJECT_ID
     
-    rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, cn_OIDs, sizeof(cn_OIDs));
-    if (rc != ERROR_SUCCESS)
+    if(cndata != NULL)
     {
-        return rc;
-    }
-    else
-        len += total;
     
-    //CN_OBJECT_ID Value
-    rc = ber_encode_PRINTABLE_STRING(TRUE, NULL, &total, cndata, cndata_len);
-    if (rc != ERROR_SUCCESS)
+        rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, cn_OIDs, sizeof(cn_OIDs));
+        if (rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //CN_OBJECT_ID Value
+        rc = ber_encode_PRINTABLE_STRING(TRUE, NULL, &total, cndata, cndata_len);
+        if (rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //cn sequence
+        rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+        if ((rc != ERROR_SUCCESS) || (ber_seq_len > 1024))
+        {
+            goto error;
+        }
+        else
+            len = ber_seq_len;
+        
+        
+        //cn set
+        rc = ber_encode_SET(TRUE, NULL, &ber_set_len, NULL, len);
+        if ((rc != ERROR_SUCCESS) || (ber_set_len > 1024))
+        {
+            goto error;
+        }
+        else
+            len = ber_set_len;
+        
+        cn_total = len;
+    }
+    
+    if(odata != NULL)
     {
-        goto error;
+        len = 0;
+        total = 0;
+        //O_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, o_OIDs, sizeof(o_OIDs));
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //O_OBJECT_VALUE
+        rc = ber_encode_PRINTABLE_STRING(TRUE, NULL, &total, odata, odata_len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //O seq
+        rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len = ber_seq_len;
+        
+        //O set
+        rc = ber_encode_SET(TRUE, NULL, &ber_set_len, NULL, len);
+        if ((rc != ERROR_SUCCESS) || (ber_set_len > 1024))
+        {
+            goto error;
+        }
+        else
+            len = ber_set_len;
+
+        
+        o_total = len;
+        
     }
-    else
-        len += total;
     
-    //cn sequence
+    if(oudata != NULL)
+    {
+        len = 0;
+        total = 0;
+        //OU_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, ou_OIDs, sizeof(ou_OIDs));
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU_OBJECT_VALUE
+        rc = ber_encode_PRINTABLE_STRING(TRUE, NULL, &total, oudata, oudata_len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU seq
+        rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len = ber_seq_len;
+        
+        //OU set
+        rc = ber_encode_SET(TRUE, NULL, &ber_set_len, NULL, len);
+        if ((rc != ERROR_SUCCESS) || (ber_set_len > 1024))
+        {
+            goto error;
+        }
+        else
+            len = ber_set_len;
+        
+        
+        ou_total = len;
+
+    }
+    
+    if(cdata != NULL)
+    {
+        len = 0;
+        total = 0;
+        
+        //OU_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, c_OIDs, sizeof(c_OIDs));
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU_OBJECT_VALUE
+        rc = ber_encode_PRINTABLE_STRING(TRUE, NULL, &total, cdata, cdata_len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU seq
+        rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len = ber_seq_len;
+        
+        //OU set
+        rc = ber_encode_SET(TRUE, NULL, &ber_set_len, NULL, len);
+        if ((rc != ERROR_SUCCESS) || (ber_set_len > 1024))
+        {
+            goto error;
+        }
+        else
+            len = ber_set_len;
+        
+        c_total = len;
+    }
+    
+    
+    if(emaildata != NULL)
+    {
+        len = 0;
+        total = 0;
+        
+        //OU_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, email_OIDs, sizeof(email_OIDs));
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU_OBJECT_VALUE
+        rc = ber_encode_PRINTABLE_STRING(TRUE, NULL, &total, emaildata, emaildata_len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU seq
+        rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len = ber_seq_len;
+        
+        //OU set
+        rc = ber_encode_SET(TRUE, NULL, &ber_set_len, NULL, len);
+        if ((rc != ERROR_SUCCESS) || (ber_set_len > 1024))
+        {
+            goto error;
+        }
+        else
+            len = ber_set_len;
+        
+        email_total = len;
+    }
+    
+    
+    len = cn_total + o_total + ou_total + c_total + email_total;
+    
     rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
-    if ((rc != ERROR_SUCCESS) || (ber_seq_len > 1024))
+    if(rc != ERROR_SUCCESS)
     {
         goto error;
     }
     
+    len = ber_seq_len;
     
-    //cn set
-    rc = ber_encode_SET(TRUE, NULL, &ber_set_len, NULL, ber_seq_len);
-    if ((rc != ERROR_SUCCESS) || (ber_seq_len > 1024))
+    buf =  (BYTE*)malloc(len);
+    
+    tempbuf = buf;
+    
+    if(cndata != NULL)
     {
-        goto error;
+        len = 0;
+        cn_total = 0;
+        
+        //CN_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &cn_total, cn_OIDs, sizeof(cn_OIDs));
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, cn_total);
+        len += cn_total;
+        free(tmp);
+        
+        //CN_OBJECT_Value
+        rc = ber_encode_PRINTABLE_STRING(FALSE, &tmp, &cn_total, cndata, cndata_len);
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, cn_total);
+        len += cn_total;
+        free(tmp);
+        
+        
+        //CN_SEQ
+        rc = ber_encode_SEQUENCE(FALSE, &tmp, &cn_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, cn_total);
+        len = cn_total;
+        free(tmp);
+        
+        
+        //CN_SET
+        rc = ber_encode_SET(FALSE, &tmp, &cn_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, cn_total);
+        len = cn_total;
+        free(tmp);
+        
+        tempbuf += len;
+    }
+
+    //
+    
+    if(odata != NULL)
+    {
+        len = 0;
+        o_total = 0;
+        
+        //O_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &o_total, o_OIDs, sizeof(o_OIDs));
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, o_total);
+        len += o_total;
+        free(tmp);
+        
+        //O_OBJECT_Value
+        rc = ber_encode_PRINTABLE_STRING(FALSE, &tmp, &o_total, odata, odata_len);
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, o_total);
+        len += o_total;
+        free(tmp);
+        
+        
+        //O_SEQ
+        rc = ber_encode_SEQUENCE(FALSE, &tmp, &o_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, o_total);
+        len = o_total;
+        free(tmp);
+        
+        
+        //O_SET
+        rc = ber_encode_SET(FALSE, &tmp, &o_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, o_total);
+        len = o_total;
+        free(tmp);
+        
+        tempbuf += len;
+
     }
     
-    buf =  (BYTE*)malloc(ber_set_len);
-    len = 0;
-    
-    rc = ber_encode_INTEGER(FALSE, &tmp, &total, cn_OIDs, sizeof(cn_OIDs));
-    if (rc != ERROR_SUCCESS)
+    if(oudata != NULL)
     {
-        //st_err_log(76, __FILE__, __LINE__);
-        goto error;
+        len = 0;
+        ou_total = 0;
+        
+        //O_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &ou_total, ou_OIDs, sizeof(ou_OIDs));
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, ou_total);
+        len += ou_total;
+        free(tmp);
+        
+        //O_OBJECT_Value
+        rc = ber_encode_PRINTABLE_STRING(FALSE, &tmp, &ou_total, oudata, oudata_len);
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, ou_total);
+        len += ou_total;
+        free(tmp);
+        
+        
+        //O_SEQ
+        rc = ber_encode_SEQUENCE(FALSE, &tmp, &ou_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, ou_total);
+        len = ou_total;
+        free(tmp);
+        
+        
+        //O_SET
+        rc = ber_encode_SET(FALSE, &tmp, &ou_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, ou_total);
+        len = ou_total;
+        free(tmp);
+        
+        tempbuf += len;
+        
     }
-    memcpy(buf + len, tmp, total);
-    len += total;
-    free(tmp);
-    
-    rc = ber_encode_PRINTABLE_STRING(FALSE, &tmp, &total, cndata, cndata_len);
-    if (rc != ERROR_SUCCESS)
+
+    if(cdata != NULL)
     {
-        //st_err_log(76, __FILE__, __LINE__);
-        goto error;
+        len = 0;
+        c_total = 0;
+        
+        //C_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &c_total, c_OIDs, sizeof(c_OIDs));
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, c_total);
+        len += c_total;
+        free(tmp);
+        
+        //C_OBJECT_Value
+        rc = ber_encode_PRINTABLE_STRING(FALSE, &tmp, &c_total, cdata, cdata_len);
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, c_total);
+        len += c_total;
+        free(tmp);
+        
+        
+        //C_SEQ
+        rc = ber_encode_SEQUENCE(FALSE, &tmp, &c_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, c_total);
+        len = c_total;
+        free(tmp);
+        
+        
+        //C_SET
+        rc = ber_encode_SET(FALSE, &tmp, &c_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, c_total);
+        len = c_total;
+        free(tmp);
+        
+        tempbuf += len;
+        
     }
-    memcpy(buf + len, tmp, total);
-    len += total;
-    free(tmp);
+
+    if(emaildata != NULL)
+    {
+        len = 0;
+        email_total = 0;
+        
+        //Email_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &email_total, email_OIDs, sizeof(email_OIDs));
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, email_total);
+        len += email_total;
+        free(tmp);
+        
+        //Email_OBJECT_Value
+        rc = ber_encode_PRINTABLE_STRING(FALSE, &tmp, &email_total, emaildata, emaildata_len);
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, email_total);
+        len += email_total;
+        free(tmp);
+        
+        
+        //Email_SEQ
+        rc = ber_encode_SEQUENCE(FALSE, &tmp, &email_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, email_total);
+        len = email_total;
+        free(tmp);
+        
+        
+        //Email_SET
+        rc = ber_encode_SET(FALSE, &tmp, &email_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, email_total);
+        len = email_total;
+        free(tmp);
+        
+        tempbuf += len;
+    }
     
+
+    //
+    len = cn_total + o_total + ou_total + c_total + email_total;
     
-    rc = ber_encode_SEQUENCE(FALSE, &tmp, &total, buf, len);
+    rc = ber_encode_SEQUENCE(FALSE, &tmp, &ber_seq_len, buf, len);
     if (rc != ERROR_SUCCESS)
         goto error;
     
-    memcpy(buf, tmp, total);
-    len = total;
-    free(tmp);
+    *berSubjectNameLen = ber_seq_len;
     
-    
-    rc = ber_encode_SET(FALSE, &tmp, &total, buf, len);
-    if (rc != ERROR_SUCCESS)
-        goto error;
-    
-    memcpy(buf, tmp, total);
-    len = total;
+    memcpy(berSubjectName, tmp, ber_seq_len);
     free(tmp);
 
     
-    
-    
-    
 error:
+    
     free(buf);
     return rc;
     
+}
+
+DWORD encodeSubjectPublicKeyInfo(BYTE *berSubjectPubKeyInfo, DWORD berSubjectPubKeyInfolen, BYTE *pubkeydata, DWORD pubkeydata_len)
+{
+    
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
+    
+    
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    
+    char szHead[2] = {0x00, 0x04};
+    
+    
+    
+    //alg_oid_length
+    
+    len = sizeof(_oid_sm2_sign);
+
+    
+    //
+    len = sizeof(szHead) + pubkeydata_len;
+    
+    
+    
+
+    
+    
+error:
+    
+    free(buf);
+    return rc;
+}
+
+
+
+
+
+char valueToHexCh(const int value)
+{
+    char result = '\0';
+    if(value >= 0 && value <= 9){
+        result = (char)(value + 48); //48为ascii编码的‘0’字符编码值
+    }
+    else if(value >= 10 && value <= 15){
+        result = (char)(value - 10 + 65); //减去10则找出其在16进制的偏移量，65为ascii的'A'的字符编码值
+    }
+    else{
+        ;
+    }
+    
+    return result;
+}
+
+void asciiToHex(BYTE* in, DWORD inlen, BYTE* out, DWORD *outlen)
+{
+    if (inlen < 1 || !in || !outlen || !out)
+        return ;
+    
+    int temp,i;
+    char buffer[20];
+    
+    int high = 0,low = 0;
+    
+    *outlen = 2*inlen;
+    memset(out,0,*outlen);
+    
+    for(i = 0;i<inlen;i++)
+    {
+        temp = *(in+i);
+        //_itoa( temp, buffer, 16 );
+        high = temp >> 4;
+        low = temp & 15;
+        *(out+2*i) = valueToHexCh(high); //先写高字节
+        *(out+2*i+1) = valueToHexCh(low); //其次写低字节
+        
+        //PRINT_INFO("asciiToHex is Failed");
+    }
+    return ;
 }
 
 /*
