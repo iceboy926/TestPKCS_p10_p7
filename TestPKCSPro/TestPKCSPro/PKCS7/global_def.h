@@ -89,8 +89,8 @@
  */
 typedef struct _SM2PUBLICKEYBLOB{
     unsigned long BitLen; //模数的实际位长度，取值为：256
-    BYTE XCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
-    BYTE YCoordinate[SM2_MAX_YCOORDINATE_BITS_LEN/8];
+    unsigned char XCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
+    unsigned char YCoordinate[SM2_MAX_YCOORDINATE_BITS_LEN/8];
 }SM2PUBLICKEYBLOB, *PSM2PUBLICKEYBLOB;
 
 /*
@@ -98,7 +98,7 @@ typedef struct _SM2PUBLICKEYBLOB{
  */
 typedef struct _SM2PRIVATEKEYBLOB{
     unsigned long	BitLen;
-    BYTE	PrivateKey[SM2_MAX_MODULUS_BITS_LEN/8];
+    unsigned char	PrivateKey[SM2_MAX_MODULUS_BITS_LEN/8];
 }SM2PRIVATEKEYBLOB, *PSM2PRIVATEKEYBLOB;
 
 
@@ -107,9 +107,9 @@ typedef struct _SM2PRIVATEKEYBLOB{
  */
 typedef struct _SM2KEYPAIRBLOB{
     unsigned long BitLen;
-    BYTE XCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
-    BYTE YCoordinate[SM2_MAX_YCOORDINATE_BITS_LEN/8];
-    BYTE PrivateKey[SM2_MAX_MODULUS_BITS_LEN/8];
+    unsigned char XCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
+    unsigned char YCoordinate[SM2_MAX_YCOORDINATE_BITS_LEN/8];
+    unsigned char PrivateKey[SM2_MAX_MODULUS_BITS_LEN/8];
 }SM2KEYPAIRBLOB, *PSM2KEYPAIRBLOB;
 /*
  *1、参数BitLen的值代表加密私钥的实际位长度。
@@ -120,16 +120,16 @@ typedef struct _SM2KEYPAIRBLOB{
 typedef struct _SM2PRIVATEKEYBLOB_CFCA {
     unsigned long AlgID; //取值为：CALG_SM2_SIGN 或 CALG_SM2_KEYX
     unsigned long EncryptedPrivateKeyBitLen; //加密SM2私钥EncryptedPrivateKey的实际位(bit)长度
-    BYTE *EncryptedPrivateKey; //加密的SM2密钥对（公私钥）数据
+    unsigned char *EncryptedPrivateKey; //加密的SM2密钥对（公私钥）数据
 }SM2PRIVATEKEYBLOB_CFCA, *PSM2PRIVATEKEYBLOB_CFCA;
 
 typedef struct Struct_SM2CIPHERBLOB
 {
-    BYTE  XCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
-    BYTE  YCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
-    BYTE  Hash[32];
+    unsigned char  XCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
+    unsigned char  YCoordinate[SM2_MAX_XCOORDINATE_BITS_LEN/8];
+    unsigned char  Hash[32];
     unsigned long CipherLen;
-    BYTE  Cipher[1];
+    unsigned char  Cipher[1];
 } SM2CIPHERBLOB, *PSM2CIPHERBLOB;
 
 typedef struct Struct_ENVELOPEDKEYBLOB
@@ -137,7 +137,7 @@ typedef struct Struct_ENVELOPEDKEYBLOB
     unsigned long Version;           // 当前版本为 1
     unsigned long ulSymmAlgID;      // 对称算法标识，限定ECB模式
     unsigned long ulBits;					// 加密密钥对的密钥位长度
-    BYTE  cbEncryptedPriKey[64]; // 加密密钥对私钥的密文, ENC(32字节0x00+32字节实际私钥)
+    unsigned char  cbEncryptedPriKey[64]; // 加密密钥对私钥的密文, ENC(32字节0x00+32字节实际私钥)
     SM2PUBLICKEYBLOB PubKey; // 加密密钥对的公钥
     SM2CIPHERBLOB SM2CipherBlob;// 用保护公钥加密的对称密钥密文
 }ENVELOPEDKEYBLOB, *PENVELOPEDKEYBLOB;

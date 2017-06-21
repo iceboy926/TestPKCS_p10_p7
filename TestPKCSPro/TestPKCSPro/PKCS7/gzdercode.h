@@ -13,8 +13,7 @@
 #include "asn1.h"
 #include "global_def.h"
 
-DWORD encodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *emaildata, DWORD emaildata_len);
+DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *emaildata, DWORD emaildata_len);
 
-void asciiToHex(BYTE* in, DWORD inlen, BYTE* out, DWORD *outlen);
 
 #endif /* gzdercode_h */

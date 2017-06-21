@@ -14,13 +14,16 @@
 
 
 
-DWORD encodeVersion(BYTE *berVersion, DWORD *berVersionLen, BYTE *version, DWORD versionlen)
+DWORD berEncodeVersion(BYTE *berVersion, DWORD *berVersionLen)
 {
     DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
     
     BYTE *tmp = NULL;
+    
+    BYTE version[1] = {0x00};
+    int versionlen = sizeof(version);
     
     //获ber编码长度
     rc = ber_encode_INTEGER(TRUE, NULL, &total, version, versionlen);
@@ -47,7 +50,8 @@ error:
     return rc;
 }
 
-DWORD encodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *emaildata, DWORD emaildata_len)
+
+DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *emaildata, DWORD emaildata_len)
 {
 
     DWORD total = 0;
@@ -590,7 +594,7 @@ error:
     
 }
 
-DWORD encodeSubjectPublicKeyInfo(BYTE *berSubjectPubKeyInfo, DWORD berSubjectPubKeyInfolen, BYTE *pubkeydata, DWORD pubkeydata_len)
+DWORD berEncodeSubjectPublicKeyInfo(BYTE *berSubjectPubKeyInfo, DWORD *pberSubjectPubKeyInfolen, BYTE *pubkeydata, DWORD pubkeydata_len)
 {
     
     DWORD total = 0;
@@ -604,75 +608,236 @@ DWORD encodeSubjectPublicKeyInfo(BYTE *berSubjectPubKeyInfo, DWORD berSubjectPub
     BYTE *tmp = NULL;
     BYTE *tempbuf = NULL;
     
-    char szHead[2] = {0x00, 0x04};
+    BYTE szHead[1024] = {0x00};
+    szHead[0] = 0x00;
+    szHead[1] = 0x04;
+    
+    memcpy(&szHead[2], pubkeydata, pubkeydata_len);
     
     
     
     //alg_oid_length
     
     len = sizeof(_oid_sm2_sign);
+    
+    rc = ber_encode_BIT_STRING(TRUE, NULL, &total, szHead, pubkeydata_len + 2);
+    if (rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
+    
+    
+    //seq
+    rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len = ber_seq_len;
 
     
-    //
-    len = sizeof(szHead) + pubkeydata_len;
+    buf =  (BYTE*)malloc(len);
+    if(NULL == buf)
+    {
+        rc = DC_ERROR_MEMORY_ALLOC;
+        goto error;
+    }
     
+    memset(buf, 0x00, len);
     
+    memcpy(buf, _oid_sm2_sign, sizeof(_oid_sm2_sign));
     
+    len = sizeof(_oid_sm2_sign);
+    total = 0;
+    
+    rc = ber_encode_BIT_STRING(FALSE, &tmp, &total, szHead, pubkeydata_len + 2);
+    if (rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
 
+
+    memcpy(buf + sizeof(_oid_sm2_sign), tmp, total);
+    free(tmp);
+    
+    //seq
+    rc = ber_encode_SEQUENCE(FALSE, &tmp, &total, buf, len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len = total;
+    
+    memcpy(buf, tmp, len);
+    free(tmp);
+
+    
+    *pberSubjectPubKeyInfolen = len;
+    
+    memcpy(berSubjectPubKeyInfo, buf, len);
     
     
 error:
     
-    free(buf);
+    if(buf)
+        free(buf);
+    return rc;
+}
+
+DWORD berEncodeCertificationRequestInfo(BYTE *berCerReqInfo, DWORD *pberCerReqInfoLen, BYTE *berVersion, DWORD berVersionlen, BYTE *berSubjectName, DWORD berSubjectNameLen, BYTE *berSubjectPubkeyInfo, DWORD berSubjectPubKeyInfoLen, BYTE *berAttribute, DWORD berAttributeLen)
+{
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
+    
+    
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    
+    if(NULL == berCerReqInfo || NULL == pberCerReqInfoLen || NULL == berVersion || NULL == berSubjectName
+       || NULL == berSubjectPubkeyInfo)
+    {
+        return DC_ERROR_FUNC_PARAM;
+    }
+    
+    
+    len = berVersionlen + berSubjectNameLen + berSubjectPubKeyInfoLen + berAttributeLen;
+    
+    rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+    if (rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len = ber_seq_len;
+    
+    buf = (BYTE *)malloc(len);
+    if(buf == NULL)
+    {
+        rc = DC_ERROR_MEMORY_ALLOC;
+        goto error;
+    }
+    
+    len = 0;
+    memcpy(buf + len, berVersion, berVersionlen);
+    len += berVersionlen;
+    memcpy(buf + len, berSubjectName, berSubjectNameLen);
+    len += berSubjectNameLen;
+    memcpy(buf + len, berSubjectPubkeyInfo, berSubjectPubKeyInfoLen);
+    len += berSubjectPubKeyInfoLen;
+    
+    if(NULL != berAttribute && 0 < berAttributeLen)
+    {
+        memcpy(buf + len, berAttribute, berAttributeLen);
+        len += berAttributeLen;
+    }
+    
+    //_SEQ
+    rc = ber_encode_SEQUENCE(FALSE, &tmp, &ber_seq_len, buf, len);
+    if (rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    memcpy(berCerReqInfo, tmp, ber_seq_len);
+    *pberCerReqInfoLen = ber_seq_len;
+    free(tmp);
+    
+error:
+    
+    if(buf)
+        free(buf);
     return rc;
 }
 
 
 
 
+//
+//char valueToHexCh(const int value)
+//{
+//    char result = '\0';
+//    if(value >= 0 && value <= 9){
+//        result = (char)(value + 48); //48为ascii编码的‘0’字符编码值
+//    }
+//    else if(value >= 10 && value <= 15){
+//        result = (char)(value - 10 + 65); //减去10则找出其在16进制的偏移量，65为ascii的'A'的字符编码值
+//    }
+//    else{
+//        ;
+//    }
+//    
+//    return result;
+//}
+//
+//void asciiToHex(BYTE* in, DWORD inlen, BYTE* out, DWORD *outlen)
+//{
+//    if (inlen < 1 || !in || !outlen || !out)
+//        return ;
+//    
+//    int temp,i;
+//    char buffer[20];
+//    
+//    int high = 0,low = 0;
+//    
+//    *outlen = 2*inlen;
+//    memset(out,0,*outlen);
+//    
+//    for(i = 0;i<inlen;i++)
+//    {
+//        temp = *(in+i);
+//        //_itoa( temp, buffer, 16 );
+//        high = temp >> 4;
+//        low = temp & 15;
+//        *(out+2*i) = valueToHexCh(high); //先写高字节
+//        *(out+2*i+1) = valueToHexCh(low); //其次写低字节
+//        
+//        //PRINT_INFO("asciiToHex is Failed");
+//    }
+//    return ;
+//}
 
-char valueToHexCh(const int value)
-{
-    char result = '\0';
-    if(value >= 0 && value <= 9){
-        result = (char)(value + 48); //48为ascii编码的‘0’字符编码值
-    }
-    else if(value >= 10 && value <= 15){
-        result = (char)(value - 10 + 65); //减去10则找出其在16进制的偏移量，65为ascii的'A'的字符编码值
-    }
-    else{
-        ;
-    }
-    
-    return result;
-}
+/*
+ CertificationRequestInfo ::= SEQUENCE {
+ version        	INTEGER { v1(0) } (v1,...),
+ subject        	Name,
+ subjectPKInfo SubjectPublicKeyInfo{{ PKInfoAlgorithms }},
+ attributes     	[0] Attributes{{ CRIAttributes }}
+ }
+ SubjectPublicKeyInfo {ALGORITHM: IOSet} ::= SEQUENCE {
+ algorithm			AlgorithmIdentifier {{IOSet}},
+ subjectPublicKey 	BIT STRING
+ }
+ PKInfoAlgorithms ALGORITHM ::= { ...  -- add any locally defined algorithms here -- }
+ Attributes { ATTRIBUTE:IOSet } ::= SET OF Attribute{{ IOSet }}
+ 
+ CRIAttributes  ATTRIBUTE  ::= { ... -- add any locally defined attributes here -- }
+ Attribute { ATTRIBUTE:IOSet } ::= SEQUENCE {
+ type   	ATTRIBUTE.&id({IOSet}),
+ values 	SET SIZE(1..MAX) OF ATTRIBUTE.&Type({IOSet}{@type})
+ }
+ CertificationRequest ::= SEQUENCE {
+ certificationRequestInfo	CertificationRequestInfo,
+ signatureAlgorithm		AlgorithmIdentifier{{ SignatureAlgorithms }},
+ signature                 		BIT STRING
+ }
+ AlgorithmIdentifier {ALGORITHM:IOSet } ::= SEQUENCE {
+ algorithm   	ALGORITHM.&id({IOSet}),
+ parameters  	ALGORITHM.&Type({IOSet}{@algorithm}) OPTIONAL
+ }
+ SignatureAlgorithms ALGORITHM ::= { ... -- add any locally defined algorithms here -- }
+ 
+ */
 
-void asciiToHex(BYTE* in, DWORD inlen, BYTE* out, DWORD *outlen)
-{
-    if (inlen < 1 || !in || !outlen || !out)
-        return ;
-    
-    int temp,i;
-    char buffer[20];
-    
-    int high = 0,low = 0;
-    
-    *outlen = 2*inlen;
-    memset(out,0,*outlen);
-    
-    for(i = 0;i<inlen;i++)
-    {
-        temp = *(in+i);
-        //_itoa( temp, buffer, 16 );
-        high = temp >> 4;
-        low = temp & 15;
-        *(out+2*i) = valueToHexCh(high); //先写高字节
-        *(out+2*i+1) = valueToHexCh(low); //其次写低字节
-        
-        //PRINT_INFO("asciiToHex is Failed");
-    }
-    return ;
-}
 
 /*
 --------------------------------------------------------------------

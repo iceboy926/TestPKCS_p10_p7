@@ -136,7 +136,7 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
     
     
     
-    DWORD dwRet = encodeSubjectName(berSubjectName, &dwberSubjectNameLen, cndata, cndata_len, odata, odata_len, oudata, oudata_len, cdata, cdata_len, emaildata, emaildata_len);
+    DWORD dwRet = berEncodeSubjectName(berSubjectName, &dwberSubjectNameLen, cndata, cndata_len, odata, odata_len, oudata, oudata_len, cdata, cdata_len, emaildata, emaildata_len);
     
     if(dwRet == ERROR_SUCCESS)
     {
@@ -148,11 +148,11 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
     }
     
     
-    BYTE testdata[5] = {0x45, 0x34, 0x12, 0x13, 0x14};
-    BYTE outdata[12] = {0};
-    DWORD dwoutlen = 12;
-    
-    asciiToHex(testdata, 5, outdata, &dwoutlen);
+//    BYTE testdata[5] = {0x45, 0x34, 0x12, 0x13, 0x14};
+//    BYTE outdata[12] = {0};
+//    DWORD dwoutlen = 12;
+//    
+//    asciiToHex(testdata, 5, outdata, &dwoutlen);
 }
 
 
