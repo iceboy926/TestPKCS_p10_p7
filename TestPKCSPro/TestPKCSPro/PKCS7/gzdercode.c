@@ -759,6 +759,27 @@ error:
     return rc;
 }
 
+DWORD berEncodeCertReq(BYTE *berCertReq, DWORD *pberCerReqLen, BYTE *berCertReqInfo, DWORD berCertRegInfoLen, BYTE *berAlg, DWORD berAlgLen, BYTE *berSign, DWORD berSignLen)
+{
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
+    
+    
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    
+    
+    
+error:
+    
+    if(buf)
+        free(buf);
+    return rc;
+}
 
 
 
