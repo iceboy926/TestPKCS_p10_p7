@@ -58,6 +58,13 @@ DWORD ber_encode_UTF8_STRING(BOOL length_only,
                                  BYTE * data,
                                  DWORD data_len);
     
+DWORD ber_encode_UTC_TIME(BOOL length_only,
+                              BYTE ** str,
+                              DWORD * str_len,
+                              BYTE * data,
+                              DWORD data_len);
+
+    
 DWORD ber_encode_IA5tring(BOOL length_only,
                               BYTE ** str,
                               DWORD * str_len,

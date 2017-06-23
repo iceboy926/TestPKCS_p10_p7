@@ -690,6 +690,43 @@ error:
     return rc;
 }
 
+
+void berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage)
+{
+    
+    
+}
+
+
+void berAttributeSubjectKeyIdentifier(BYTE *berSubjectKeyIdentifier, DWORD *pberSubjectKeyIdentifier)
+{
+    
+    
+}
+
+
+DWORD berAttribute(BYTE *berAttribute, DWORD *pberAttributelen)
+{
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
+    
+    
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    
+    
+    
+    
+  
+error:
+    
+    return rc;
+}
+
 DWORD berEncodeCertificationRequestInfo(BYTE *berCerReqInfo, DWORD *pberCerReqInfoLen, BYTE *berVersion, DWORD berVersionlen, BYTE *berSubjectName, DWORD berSubjectNameLen, BYTE *berSubjectPubkeyInfo, DWORD berSubjectPubKeyInfoLen, BYTE *berAttribute, DWORD berAttributeLen)
 {
     DWORD total = 0;
@@ -727,6 +764,8 @@ DWORD berEncodeCertificationRequestInfo(BYTE *berCerReqInfo, DWORD *pberCerReqIn
         goto error;
     }
     
+    memset(buf, 0x00, len);
+    
     len = 0;
     memcpy(buf + len, berVersion, berVersionlen);
     len += berVersionlen;
@@ -759,26 +798,94 @@ error:
     return rc;
 }
 
+
+/*
+ 
+ CertificationRequest ::= SEQUENCE
+ {
+ certificationRequestInfo   CertificationRequestInfo,
+ signatureAlgorithm         AlgorithmIdentifier,
+ signature                  BIT STRING
+ }
+
+ 
+*/
+
 DWORD berEncodeCertReq(BYTE *berCertReq, DWORD *pberCerReqLen, BYTE *berCertReqInfo, DWORD berCertRegInfoLen, BYTE *berAlg, DWORD berAlgLen, BYTE *berSign, DWORD berSignLen)
 {
     DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
     DWORD ber_seq_len = 0;
-    DWORD ber_set_len = 0;
+
     
     
     BYTE *buf = NULL;
     BYTE *tmp = NULL;
-    BYTE *tempbuf = NULL;
     
     
+    if(NULL == berCertReq || pberCerReqLen == NULL || NULL == berCertReqInfo || NULL == berAlg || NULL == berSign)
+    {
+        return DC_ERROR_FUNC_PARAM;
+    }
+    
+    len = berCertRegInfoLen + berAlgLen + berSignLen;
+    
+    rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+    if (rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len = ber_seq_len;
+    
+    
+    buf = (BYTE *)malloc(len);
+    if(NULL == buf)
+    {
+        rc = DC_ERROR_FUNC_PARAM;
+        goto error;
+    }
+    
+    memset(buf, 0x00, len);
+    
+    len = 0;
+    
+    memcpy(buf, berCertReqInfo, berCertRegInfoLen);
+    len += berCertRegInfoLen;
+    memcpy(buf + len, berAlg, berAlgLen);
+    len += berAlgLen;
+    memcpy(buf + len, berSign, berSignLen);
+    len += berSignLen;
+    
+    
+    rc = ber_encode_SEQUENCE(FALSE, &tmp, &ber_seq_len, buf, len);
+    if (rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    memcpy(berCertReq, tmp, ber_seq_len);
+    *pberCerReqLen = ber_seq_len;
+    free(tmp);
+    
+    
+
     
 error:
     
     if(buf)
         free(buf);
     return rc;
+}
+
+
+
+DWORD PackPKCS10()
+{
+    
+    
+    return 0;
 }
 
 
