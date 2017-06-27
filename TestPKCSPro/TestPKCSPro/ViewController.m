@@ -84,37 +84,8 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
     }  
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-    
-    char newdata[64] = {0x00};
-    
-    memset(newdata, 1, 64);
-    
-    unsigned char newPubkey[80] = {
-        0x98, 0x65, 0x98, 0x65, 0x00, 0x76, 0x04, 0x20,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0x98, 0x65, 0x98, 0x65, 0x98, 0x65, 0x98, 0x65
-    };
-    
-
-    
-    char *tempstr = mystrstr(newPubkey, sizeof(newPubkey), replaced_userPubKey, 64);
-    if(tempstr == NULL)
-    {
-        NSLog(@"dsfsdfsd");
-    }
-    
-    memcpy(tempstr, newdata, 64);
-    
+- (void)testencode
+{
     
     BYTE berSubjectName[1024] = {0};
     DWORD dwberSubjectNameLen = sizeof(berSubjectName);
@@ -146,16 +117,91 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
     {
         NSLog(@"encodeSubjectName Failed");
     }
-    
-    
-//    BYTE testdata[5] = {0x45, 0x34, 0x12, 0x13, 0x14};
-//    BYTE outdata[12] = {0};
-//    DWORD dwoutlen = 12;
-//    
-//    asciiToHex(testdata, 5, outdata, &dwoutlen);
+
 }
 
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+    
+   NSString *strIn = @"1.2.156.10197.1.501";  //sm2-sm3sign
+    
+   NSString *strIn1 = @"2.5.29.15";
+    
+    [self getTestOut:strIn1];
+ 
+}
 
+void convertData(int intData, int N, char *szoutdata, int *poutdatalen)
+{
+    int temp = intData;
+    char szout[128] = {0};
+    int count = 0;
+    int remainder = 0;
+    int j = 0;
+
+    
+    while(temp)
+    {
+        remainder = temp % N;
+        szout[j++] = remainder;
+        temp = temp/N;
+    }
+    
+    *poutdatalen = j;
+    
+    for(int i = 0; i < j; i++)
+    {
+        if(i == j-1)
+        {
+            szoutdata[i] = szout[j-i-1];
+        }
+        else
+        {
+            szoutdata[i] = szout[j-i-1]|0x80;
+        }
+    }
+}
+
+- (void)getTestOut:(NSString *)strin
+{
+    NSString *strOut = [NSString string];
+    NSMutableArray *strArray = [NSMutableArray array];
+    char szOutData[128] = {0};
+    int outdataLen = 0;
+    
+    NSArray *arrayOut = [strin componentsSeparatedByString:@"."];
+    
+    NSString *strV1 = [arrayOut objectAtIndex:0];
+    NSString *strV2 = [arrayOut objectAtIndex:1];
+    
+    szOutData[0] = 40*[strV1 intValue] + [strV2 intValue];
+    
+    [strArray addObject:[NSString stringWithFormat:@"0x%x", szOutData[0]]];
+
+    
+    for (int i = 2; i < [arrayOut count]; i++) {
+        
+        int value = [[arrayOut objectAtIndex:i] intValue];
+        
+        char szOutData[128] = {0};
+        int len = 0;
+        
+        convertData(value, 128, szOutData, &len);
+        
+        for (int j = 0; j < len; j++) {
+            
+            int intValue = szOutData[j];
+            [strArray addObject:[NSString stringWithFormat:@"0x%x", intValue]];
+        }
+    }
+    
+    
+    NSLog(@"strArray is %@", strArray);
+    
+    
+    return ;
+}
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];

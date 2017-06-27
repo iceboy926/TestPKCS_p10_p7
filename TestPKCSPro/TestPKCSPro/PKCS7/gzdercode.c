@@ -690,10 +690,98 @@ error:
     return rc;
 }
 
-
-void berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage)
+//XCN_OID_KEY_USAGE (2.5.29.15)
+void berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsage, DWORD dwkeyUsage)
 {
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
     
+    
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    
+    BYTE keyUsage_OIDs[3] = {0x55, 0x1d, 0x0f};
+    
+    
+    len = 0;
+    total = 0;
+    //KeyUsage_OBJECT_ID
+    rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, keyUsage_OIDs, sizeof(keyUsage_OIDs));
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
+    
+    rc = ber_encode_SET(TRUE, NULL, &total, keyUsage, dwkeyUsage);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
+    
+    
+    rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len = ber_seq_len;
+    
+    buf = malloc(len * sizeof(BYTE));
+    if(buf == NULL)
+    {
+        rc = DC_ERROR_FUNC_PARAM;
+        goto error;
+    }
+    
+    len = 0;
+    total = 0;
+    
+    rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &total, keyUsage_OIDs, sizeof(keyUsage_OIDs));
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
+    
+    memcpy(buf, tmp, len);
+    free(tmp);
+    
+    rc = ber_encode_SET(FALSE, &tmp, &total, keyUsage, dwkeyUsage);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    memcpy(buf + len, tmp, total);
+    free(tmp);
+    len += total;
+    
+    rc = ber_encode_SEQUENCE(FALSE, &tmp, &total, buf, len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    memcpy(buf, tmp, total);
+    free(tmp);
+    
+    memcpy(berKeyUsage, buf, total);
+    *pberKeyUsage = total;
+    
+    
+
+error:
+    
+    return ;
     
 }
 
