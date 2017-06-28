@@ -105,9 +105,9 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
     BYTE emaildata[] = "zuoyy@gmrz-bj.com";
     DWORD emaildata_len = strlen(emaildata);
     
+    DWORD dwRet = 0;
     
-    
-    DWORD dwRet = berEncodeSubjectName(berSubjectName, &dwberSubjectNameLen, cndata, cndata_len, odata, odata_len, oudata, oudata_len, cdata, cdata_len, emaildata, emaildata_len);
+    //DWORD dwRet = berEncodeSubjectName(berSubjectName, &dwberSubjectNameLen, cndata, cndata_len, odata, odata_len, oudata, oudata_len, cdata, cdata_len, emaildata, emaildata_len);
     
     if(dwRet == ERROR_SUCCESS)
     {

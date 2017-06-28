@@ -22,7 +22,7 @@ DWORD berEncodeVersion(BYTE *berVersion, DWORD *berVersionLen)
     
     BYTE *tmp = NULL;
     
-    BYTE version[1] = {0x00};
+    BYTE version[1] = {0x01};
     int versionlen = sizeof(version);
     
     //获ber编码长度
@@ -51,7 +51,7 @@ error:
 }
 
 
-DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *emaildata, DWORD emaildata_len)
+DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *ldata, DWORD ldata_len, BYTE *emaildata, DWORD emaildata_len)
 {
 
     DWORD total = 0;
@@ -64,6 +64,7 @@ DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE
     DWORD o_total = 0;
     DWORD ou_total = 0;
     DWORD c_total = 0;
+    DWORD l_total = 0;
     DWORD email_total = 0;
     
     BYTE* ber_set_cn = NULL;
@@ -73,11 +74,12 @@ DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE
     BYTE *tmp = NULL;
     BYTE *tempbuf = NULL;
     
-    BYTE cn_OIDs[] = {0x55, 0x04, 0x03};
-    BYTE o_OIDs[] = {0x55, 0x04, 0x0A};
-    BYTE ou_OIDs[] = {0x55, 0x04, 0x0B};
-    BYTE c_OIDs[] = {0x55, 0x04, 0x06};
-    BYTE email_OIDs[] = {0x2a, 0x86, 0x48, 0x86, 0xF7, 0x0d, 0x01,0x09,0x01};
+    BYTE cn_OIDs[] = {0x55, 0x04, 0x03}; //XCN_OID_COMMON_NAME (2.5.4.3)
+    BYTE o_OIDs[] = {0x55, 0x04, 0x0A}; //XCN_OID_ORGANIZATION_NAME (2.5.4.10)
+    BYTE ou_OIDs[] = {0x55, 0x04, 0x0B}; //XCN_OID_ORGANIZATIONAL_UNIT_NAME (2.5.4.11)
+    BYTE c_OIDs[] = {0x55, 0x04, 0x06}; //XCN_OID_COUNTRY_NAME
+    BYTE l_OIDs[] = {0x55, 0x04, 0x07}; //XCN_OID_LOCALITY_NAME (2.5.4.7)
+    BYTE email_OIDs[] = {0x2a, 0x86, 0x48, 0x86, 0xF7, 0x0d, 0x01,0x09,0x01}; //XCN_OID_RSA_emailAddr (1.2.840.113549.1.9.1)
     
     
     //CN_OBJECT_ID
@@ -258,6 +260,51 @@ DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE
         c_total = len;
     }
     
+    if(ldata != NULL)
+    {
+        len = 0;
+        total = 0;
+        
+        //OU_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, l_OIDs, sizeof(l_OIDs));
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU_OBJECT_VALUE
+        rc = ber_encode_PRINTABLE_STRING(TRUE, NULL, &total, ldata, ldata_len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len += total;
+        
+        //OU seq
+        rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
+        if(rc != ERROR_SUCCESS)
+        {
+            goto error;
+        }
+        else
+            len = ber_seq_len;
+        
+        //OU set
+        rc = ber_encode_SET(TRUE, NULL, &ber_set_len, NULL, len);
+        if ((rc != ERROR_SUCCESS) || (ber_set_len > 1024))
+        {
+            goto error;
+        }
+        else
+            len = ber_set_len;
+        
+        l_total = len;
+    }
+
+    
     
     if(emaildata != NULL)
     {
@@ -304,7 +351,7 @@ DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE
     }
     
     
-    len = cn_total + o_total + ou_total + c_total + email_total;
+    len = cn_total + o_total + ou_total + c_total + l_total + email_total;
     
     rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
     if(rc != ERROR_SUCCESS)
@@ -522,6 +569,58 @@ DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE
         tempbuf += len;
         
     }
+    
+    if(ldata != NULL)
+    {
+        len = 0;
+        l_total = 0;
+        
+        //C_OBJECT_ID
+        rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &l_total, l_OIDs, sizeof(l_OIDs));
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, l_total);
+        len += l_total;
+        free(tmp);
+        
+        //C_OBJECT_Value
+        rc = ber_encode_PRINTABLE_STRING(FALSE, &tmp, &l_total, ldata, ldata_len);
+        if (rc != ERROR_SUCCESS)
+        {
+            //st_err_log(76, __FILE__, __LINE__);
+            goto error;
+        }
+        memcpy(tempbuf + len, tmp, l_total);
+        len += l_total;
+        free(tmp);
+        
+        
+        //C_SEQ
+        rc = ber_encode_SEQUENCE(FALSE, &tmp, &l_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, l_total);
+        len = l_total;
+        free(tmp);
+        
+        
+        //C_SET
+        rc = ber_encode_SET(FALSE, &tmp, &l_total, tempbuf, len);
+        if (rc != ERROR_SUCCESS)
+            goto error;
+        
+        memcpy(tempbuf, tmp, l_total);
+        len = l_total;
+        free(tmp);
+        
+        tempbuf += len;
+        
+    }
+
 
     if(emaildata != NULL)
     {
@@ -575,7 +674,7 @@ DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE
     
 
     //
-    len = cn_total + o_total + ou_total + c_total + email_total;
+    len = cn_total + o_total + ou_total + c_total + l_total + email_total;
     
     rc = ber_encode_SEQUENCE(FALSE, &tmp, &ber_seq_len, buf, len);
     if (rc != ERROR_SUCCESS)
@@ -1056,18 +1155,74 @@ DWORD berEncodeSignAlg(BYTE *berSignAlg, DWORD *pberSignAlglen)
     return rc;
 }
 
-DWORD berSignature(BYTE *berSignature, DWORD *pberSignaturelen, BYTE *signdata, DWORD dwSigndatalen)
+DWORD berEncodeSignature(BYTE *berSignature, DWORD *pberSignaturelen, BYTE *signdata, DWORD dwSigndatalen)
 {
     DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
     DWORD ber_seq_len = 0;
     
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    BYTE  tmpsignData[128] = {0};
+    DWORD dwtmpsignDatalen = sizeof(tmpsignData);
+    
     //03 len 00 r s
     
-    //rc = ber_encode_BIT_STRING(TRUE, NULL, , <#BYTE *data#>, <#DWORD data_len#>)
+    char firstByte = signdata[0];
+    if((firstByte&0x80) == 0x80)
+    {
+        dwtmpsignDatalen = dwSigndatalen + 1;
+        memcpy(&tmpsignData[1], signdata, dwSigndatalen);
+    }
+    else
+    {
+        dwtmpsignDatalen = dwSigndatalen;
+        memcpy(&tmpsignData[0], signdata, dwSigndatalen);
+    }
+    
+    rc = ber_encode_BIT_STRING(TRUE, NULL, &total, NULL, dwtmpsignDatalen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
     
     
+    buf = malloc(len *sizeof(BYTE));
+    if(buf == NULL)
+    {
+        rc = DC_ERROR_FUNC_PARAM;
+        goto error;
+    }
+    
+    len = 0;
+    total = 0;
+    
+    rc = ber_encode_BIT_STRING(FALSE, &tmp, &total, tmpsignData, dwtmpsignDatalen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
+    
+    memcpy(buf, tmp, len);
+    free(tmp);
+    
+    *pberSignaturelen = len;
+    memcpy(berSignature, buf, len);
+    
+    
+    
+error:
+    
+    if(buf)
+    {
+        free(buf);
+    }
     
     return rc;
 }
@@ -1157,9 +1312,109 @@ error:
 
 DWORD PackPKCS10()
 {
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    
+    BYTE berVersion[64] = {0};
+    DWORD dwberVersionLen = sizeof(berVersion);
+    
+    rc = berEncodeVersion(berVersion, &dwberVersionLen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
     
     
-    return 0;
+    BYTE berSubjectName[1024] = {0};
+    DWORD dwberSubjectNameLen = sizeof(berSubjectName);
+    
+    BYTE cndata[] = "zuoyy";
+    DWORD cndata_len = strlen(cndata);
+    
+    BYTE odata[] = "testorg";
+    DWORD odata_len = strlen(odata);
+    
+    BYTE oudata[] = "testorgunit";
+    DWORD oudata_len = strlen(oudata);
+    
+    BYTE cdata[] = "cn";
+    DWORD cdata_len = strlen(cdata);
+    
+    BYTE emaildata[] = "zuoyy@gmrz-bj.com";
+    DWORD emaildata_len = strlen(emaildata);
+    
+    BYTE ldata[] = "bj";
+    DWORD ldata_len = strlen(ldata);
+    
+    
+    
+    rc = berEncodeSubjectName(berSubjectName, &dwberSubjectNameLen, cndata, cndata_len, odata, odata_len, oudata, oudata_len, cdata, cdata_len, ldata, ldata_len, emaildata, emaildata_len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    BYTE berSubjectPubKeyInfo[1024] = {0x00};
+    DWORD dwberSubjectPubKeyInfolen = sizeof(berSubjectPubKeyInfo);
+    
+    BYTE pubkey[64] = {0x0};
+    DWORD dwpubkey = sizeof(pubkey);
+    
+    rc = berEncodeSubjectPublicKeyInfo(berSubjectPubKeyInfo, &dwberSubjectPubKeyInfolen, pubkey, dwpubkey);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    
+    BYTE berCertRequestInfo[1024] = {0};
+    DWORD dwberCertRequestInfolen = sizeof(berCertRequestInfo);
+    
+    rc = berEncodeCertificationRequestInfo(berCertRequestInfo, &dwberCertRequestInfolen, berVersion, dwberVersionLen, berSubjectName, dwberSubjectNameLen, berSubjectPubKeyInfo, dwberSubjectPubKeyInfolen, NULL, 0);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    
+    BYTE berSignAlg[128] = {0};
+    DWORD dwberSignAlglen = sizeof(berSignAlg);
+    
+    rc = berEncodeSignAlg(berSignAlg, &dwberSignAlglen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    BYTE berSign[128] = {0};
+    DWORD dwberSignlen = sizeof(berSign);
+    
+    BYTE sign[128] = {0};
+    DWORD dwSignlen = sizeof(sign);
+    
+    rc = berEncodeSignature(berSign, &dwberSignlen, sign, dwSignlen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    
+    BYTE berCertReq[2048] = {0};
+    DWORD dwberCertReqlen = sizeof(berCertReq);
+    
+    rc = berEncodeCertReq(berCertReq, &dwberCertReqlen, berCertRequestInfo, dwberCertRequestInfolen, berSignAlg, dwberSignAlglen, berSign, dwberSignlen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    
+    
+error:
+    
+    return rc;
 }
 
 
