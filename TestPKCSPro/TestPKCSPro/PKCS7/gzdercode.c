@@ -691,17 +691,32 @@ error:
 }
 
 //XCN_OID_KEY_USAGE (2.5.29.15)
-void berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsage, DWORD dwkeyUsage)
+/*
+typedef enum X509KeyUsageFlags {
+    XCN_CERT_NO_KEY_USAGE                 = 0,
+    XCN_CERT_DIGITAL_SIGNATURE_KEY_USAGE  = 0x80,
+    XCN_CERT_NON_REPUDIATION_KEY_USAGE    = 0x40,
+    XCN_CERT_KEY_ENCIPHERMENT_KEY_USAGE   = 0x20,
+    XCN_CERT_DATA_ENCIPHERMENT_KEY_USAGE  = 0x10,
+    XCN_CERT_KEY_AGREEMENT_KEY_USAGE      = 0x8,
+    XCN_CERT_KEY_CERT_SIGN_KEY_USAGE      = 0x4,
+    XCN_CERT_OFFLINE_CRL_SIGN_KEY_USAGE   = 0x2,
+    XCN_CERT_CRL_SIGN_KEY_USAGE           = 0x2,
+    XCN_CERT_ENCIPHER_ONLY_KEY_USAGE      = 0x1,
+    XCN_CERT_DECIPHER_ONLY_KEY_USAGE      = ( 0x80 << 8 )
+} X509KeyUsageFlags;
+ */
+DWORD berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsage, DWORD dwkeyUsage)
 {
     DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
     DWORD ber_seq_len = 0;
-    DWORD ber_set_len = 0;
-    
+    DWORD ber_oct_len = 0;
     
     BYTE *buf = NULL;
     BYTE *tmp = NULL;
+    BYTE *tmpBuf = NULL;
     
     BYTE keyUsage_OIDs[3] = {0x55, 0x1d, 0x0f};
     
@@ -717,13 +732,22 @@ void berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsage
     else
         len += total;
     
-    rc = ber_encode_SET(TRUE, NULL, &total, keyUsage, dwkeyUsage);
+    //
+    
+    rc = ber_encode_BIT_STRING(TRUE, NULL, &total, keyUsage, dwkeyUsage);
     if(rc != ERROR_SUCCESS)
     {
         goto error;
     }
-    else
-        len += total;
+    
+    rc = ber_encode_OCTET_STRING(TRUE, NULL, &ber_oct_len, NULL, total);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    len += ber_oct_len;
+    
     
     
     rc = ber_encode_SEQUENCE(TRUE, NULL, &ber_seq_len, NULL, len);
@@ -755,13 +779,23 @@ void berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsage
     memcpy(buf, tmp, len);
     free(tmp);
     
-    rc = ber_encode_SET(FALSE, &tmp, &total, keyUsage, dwkeyUsage);
+    rc = ber_encode_BIT_STRING(FALSE, &tmp, &total, keyUsage, dwkeyUsage);
     if(rc != ERROR_SUCCESS)
     {
         goto error;
     }
     
-    memcpy(buf + len, tmp, total);
+    rc = ber_encode_OCTET_STRING(FALSE, &tmpBuf, &ber_oct_len, tmp, total);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    total = ber_oct_len;
+    
+
+    memcpy(buf + len, tmpBuf, total);
+    free(tmpBuf);
     free(tmp);
     len += total;
     
@@ -781,13 +815,138 @@ void berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsage
 
 error:
     
-    return ;
+    if(buf)
+        free(buf);
+    
+    return rc;
     
 }
 
-
-void berAttributeSubjectKeyIdentifier(BYTE *berSubjectKeyIdentifier, DWORD *pberSubjectKeyIdentifier)
+//XCN_OID_SUBJECT_KEY_IDENTIFIER (2.5.29.14)
+//Typically the value is a 20-byte SHA-1 hash of the public key contained in the CA signing certificate
+DWORD berAttributeSubjectKeyIdentifier(BYTE *berSubjectKeyIdentifier, DWORD *pberSubjectKeyIdentifierlen, BYTE *pubkeyIdentifier, DWORD dwPubKeyIdentifierlen)
 {
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
+    
+    
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    
+    BYTE subjectKeyidentifier_oids[3] = {0x55, 0x1d, 0x0e};
+    
+    
+    len = 0;
+    total = 0;
+    
+    rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, subjectKeyidentifier_oids, sizeof(subjectKeyidentifier_oids));
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+    {
+        len += total;
+    }
+    
+    rc = ber_encode_OCTET_STRING(TRUE, NULL, &total, pubkeyIdentifier, dwPubKeyIdentifierlen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+    {
+        ber_set_len = total;
+    }
+    
+    rc = ber_encode_OCTET_STRING(TRUE, NULL, &total, NULL, ber_set_len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+    {
+        ber_set_len = total;
+    }
+    
+    len += ber_set_len;
+    
+    rc = ber_encode_SEQUENCE(TRUE, NULL, &total, NULL, len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    buf = malloc(len *sizeof(BYTE));
+    if(buf != NULL)
+    {
+        rc = DC_ERROR_FUNC_PARAM;
+        goto error;
+    }
+    
+    len = 0;
+    total = 0;
+    
+    rc = ber_encode_OBJECT_IDENTIFIER(FALSE, &tmp, &total, subjectKeyidentifier_oids, sizeof(subjectKeyidentifier_oids));
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    memcpy(buf, tmp, total);
+    len += total;
+    free(tmp);
+    
+    rc = ber_encode_SET(FALSE, &tmp, &total, pubkeyIdentifier, dwPubKeyIdentifierlen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    rc = ber_encode_SET(FALSE, &tempbuf, &ber_set_len, tmp, total);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    memcpy(buf + len, tempbuf, ber_set_len);
+    len += ber_set_len;
+    free(tmp);
+    free(tempbuf);
+    
+    rc = ber_encode_SEQUENCE(FALSE, &tmp, &ber_seq_len, buf, len);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    len = ber_seq_len;
+    
+    memset(buf, 0, len);
+    memcpy(buf, tmp, len);
+    free(tmp);
+    
+    *pberSubjectKeyIdentifierlen = len;
+    memcpy(berSubjectKeyIdentifier, buf, len);
+    
+    
+error:
+    
+    if(buf)
+        free(buf);
+    
+    return rc;
+    
+}
+
+//XCN_OID_ENHANCED_KEY_USAGE (2.5.29.37)
+void berAttributeEnhancedKeyUsage(BYTE *berEnhancedKeyUsage, DWORD *pberEnhancedKeyUsage)
+{
+    BYTE enhancedKeyUsage[3] = {0x55, 0x1d, 0x25};
     
     
 }
@@ -886,13 +1045,40 @@ error:
     return rc;
 }
 
+DWORD berEncodeSignAlg(BYTE *berSignAlg, DWORD *pberSignAlglen)
+{
+    DWORD rc = ERROR_SUCCESS;
+    
+    *pberSignAlglen = sizeof(_oid_sm2_sm3);
+    memcpy(berSignAlg, _oid_sm2_sm3, sizeof(_oid_sm2_sm3));
+    
+    
+    return rc;
+}
+
+DWORD berSignature(BYTE *berSignature, DWORD *pberSignaturelen, BYTE *signdata, DWORD dwSigndatalen)
+{
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    
+    //03 len 00 r s
+    
+    //rc = ber_encode_BIT_STRING(TRUE, NULL, , <#BYTE *data#>, <#DWORD data_len#>)
+    
+    
+    
+    return rc;
+}
+
 
 /*
  
  CertificationRequest ::= SEQUENCE
  {
  certificationRequestInfo   CertificationRequestInfo,
- signatureAlgorithm         AlgorithmIdentifier,
+ signatureAlgorithm         AlgorithmIdentifier, sm2_sm3
  signature                  BIT STRING
  }
 
@@ -978,49 +1164,6 @@ DWORD PackPKCS10()
 
 
 
-//
-//char valueToHexCh(const int value)
-//{
-//    char result = '\0';
-//    if(value >= 0 && value <= 9){
-//        result = (char)(value + 48); //48为ascii编码的‘0’字符编码值
-//    }
-//    else if(value >= 10 && value <= 15){
-//        result = (char)(value - 10 + 65); //减去10则找出其在16进制的偏移量，65为ascii的'A'的字符编码值
-//    }
-//    else{
-//        ;
-//    }
-//    
-//    return result;
-//}
-//
-//void asciiToHex(BYTE* in, DWORD inlen, BYTE* out, DWORD *outlen)
-//{
-//    if (inlen < 1 || !in || !outlen || !out)
-//        return ;
-//    
-//    int temp,i;
-//    char buffer[20];
-//    
-//    int high = 0,low = 0;
-//    
-//    *outlen = 2*inlen;
-//    memset(out,0,*outlen);
-//    
-//    for(i = 0;i<inlen;i++)
-//    {
-//        temp = *(in+i);
-//        //_itoa( temp, buffer, 16 );
-//        high = temp >> 4;
-//        low = temp & 15;
-//        *(out+2*i) = valueToHexCh(high); //先写高字节
-//        *(out+2*i+1) = valueToHexCh(low); //其次写低字节
-//        
-//        //PRINT_INFO("asciiToHex is Failed");
-//    }
-//    return ;
-//}
 
 /*
  CertificationRequestInfo ::= SEQUENCE {
@@ -1033,7 +1176,7 @@ DWORD PackPKCS10()
  algorithm			AlgorithmIdentifier {{IOSet}},
  subjectPublicKey 	BIT STRING
  }
- PKInfoAlgorithms ALGORITHM ::= { ...  -- add any locally defined algorithms here -- }
+ PKInfoAlgorithms ALGORITHM ::= { ... -- add any locally defined algorithms here -- }
  Attributes { ATTRIBUTE:IOSet } ::= SET OF Attribute{{ IOSet }}
  
  CRIAttributes  ATTRIBUTE  ::= { ... -- add any locally defined attributes here -- }
