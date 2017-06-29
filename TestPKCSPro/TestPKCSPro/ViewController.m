@@ -27,6 +27,30 @@ static unsigned char replaced_userPubKey[65] = {
     0x00
 };
 
+static unsigned char cert_pub[64] = {
+    0x44, 0x46, 0xd0, 0x41, 0x32, 0x80, 0xb5, 0x95,
+    0x82, 0xab, 0xea, 0xab, 0x87, 0xf5, 0x6b, 0xa4,
+    0xbd, 0x87, 0xdc, 0xc7, 0xa4, 0x7a, 0xf0, 0xaf,
+    0x49, 0x76, 0x07, 0xc6, 0xbf, 0x1a, 0x5d, 0x4d,
+    0x44, 0x46, 0xd0, 0x41, 0x32, 0x80, 0xb5, 0x95,
+    0x82, 0xab, 0xea, 0xab, 0x87, 0xf5, 0x6b, 0xa4,
+    0xbd, 0x87, 0xdc, 0xc7, 0xa4, 0x7a, 0xf0, 0xaf,
+    0x49, 0x76, 0x07, 0xc6, 0xbf, 0x1a, 0x5d, 0x4d
+};
+
+static unsigned char cert_sign[64] = {
+    0x44, 0x46, 0xd0, 0x41, 0x32, 0x80, 0xb5, 0x95,
+    0x82, 0xab, 0xea, 0xab, 0x87, 0xf5, 0x6b, 0xa4,
+    0xbd, 0x87, 0xdc, 0xc7, 0xa4, 0x7a, 0xf0, 0xaf,
+    0x49, 0x76, 0x07, 0xc6, 0xbf, 0x1a, 0x5d, 0x4d,
+    0x44, 0x46, 0xd0, 0x41, 0x32, 0x80, 0xb5, 0x95,
+    0x82, 0xab, 0xea, 0xab, 0x87, 0xf5, 0x6b, 0xa4,
+    0xbd, 0x87, 0xdc, 0xc7, 0xa4, 0x7a, 0xf0, 0xaf,
+    0x49, 0x76, 0x07, 0xc6, 0xbf, 0x1a, 0x5d, 0x4d
+};
+
+
+
 void str_replace(char * cp, int n, char * str, int len)
 {
     int lenofstr = len;
@@ -87,24 +111,6 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
 - (void)testencode
 {
     
-    BYTE berSubjectName[1024] = {0};
-    DWORD dwberSubjectNameLen = sizeof(berSubjectName);
-    
-    BYTE cndata[] = "cn";
-    DWORD cndata_len = strlen(cndata);
-    
-    BYTE odata[] = "testorg";
-    DWORD odata_len = strlen(odata);
-    
-    BYTE oudata[] = "testorgunit";
-    DWORD oudata_len = strlen(oudata);
-    
-    BYTE cdata[] = "zuoyy";
-    DWORD cdata_len = strlen(cdata);
-    
-    BYTE emaildata[] = "zuoyy@gmrz-bj.com";
-    DWORD emaildata_len = strlen(emaildata);
-    
     DWORD dwRet = 0;
     
     //DWORD dwRet = berEncodeSubjectName(berSubjectName, &dwberSubjectNameLen, cndata, cndata_len, odata, odata_len, oudata, oudata_len, cdata, cdata_len, emaildata, emaildata_len);
@@ -120,6 +126,23 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
 
 }
 
+- (void)generatep10
+{
+    BYTE berCertReq[1024] = {0};
+    DWORD dwberCertReq = sizeof(berCertReq);
+    
+    DWORD dwRet = PackPKCS10(cert_pub, sizeof(cert_pub), cert_sign, sizeof(cert_sign), berCertReq, &dwberCertReq);
+    if(dwRet == 0)
+    {
+        NSLog(@"success");
+    }
+    else
+    {
+        NSLog(@"error");
+    }
+    
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
@@ -128,7 +151,9 @@ char *mystrstr(char *s1, int s1len,char *s2, int s2len)
     
    NSString *strIn1 = @"2.5.29.15";
     
-    [self getTestOut:strIn1];
+   // [self getTestOut:strIn1];
+    
+    [self generatep10];
  
 }
 

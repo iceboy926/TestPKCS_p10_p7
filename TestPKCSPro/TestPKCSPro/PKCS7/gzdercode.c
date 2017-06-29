@@ -1310,12 +1310,10 @@ error:
 
 
 
-DWORD PackPKCS10()
+DWORD PackPKCS10(BYTE *pubkey, DWORD dwpubkey, BYTE *sign, DWORD dwSignlen, BYTE *berCertReq, DWORD *pdwberCertReqlen)
 {
-    DWORD total = 0;
-    DWORD len = 0; //0 or 128
+
     DWORD rc = ERROR_SUCCESS;
-    DWORD ber_seq_len = 0;
     
     BYTE berVersion[64] = {0};
     DWORD dwberVersionLen = sizeof(berVersion);
@@ -1358,10 +1356,7 @@ DWORD PackPKCS10()
     
     BYTE berSubjectPubKeyInfo[1024] = {0x00};
     DWORD dwberSubjectPubKeyInfolen = sizeof(berSubjectPubKeyInfo);
-    
-    BYTE pubkey[64] = {0x0};
-    DWORD dwpubkey = sizeof(pubkey);
-    
+  
     rc = berEncodeSubjectPublicKeyInfo(berSubjectPubKeyInfo, &dwberSubjectPubKeyInfolen, pubkey, dwpubkey);
     if(rc != ERROR_SUCCESS)
     {
@@ -1391,8 +1386,6 @@ DWORD PackPKCS10()
     BYTE berSign[128] = {0};
     DWORD dwberSignlen = sizeof(berSign);
     
-    BYTE sign[128] = {0};
-    DWORD dwSignlen = sizeof(sign);
     
     rc = berEncodeSignature(berSign, &dwberSignlen, sign, dwSignlen);
     if(rc != ERROR_SUCCESS)
@@ -1401,16 +1394,14 @@ DWORD PackPKCS10()
     }
     
     
-    BYTE berCertReq[2048] = {0};
-    DWORD dwberCertReqlen = sizeof(berCertReq);
-    
-    rc = berEncodeCertReq(berCertReq, &dwberCertReqlen, berCertRequestInfo, dwberCertRequestInfolen, berSignAlg, dwberSignAlglen, berSign, dwberSignlen);
+    rc = berEncodeCertReq(berCertReq, pdwberCertReqlen, berCertRequestInfo, dwberCertRequestInfolen, berSignAlg, dwberSignAlglen, berSign, dwberSignlen);
     if(rc != ERROR_SUCCESS)
     {
         goto error;
     }
     
     
+    rc = 0;
     
 error:
     

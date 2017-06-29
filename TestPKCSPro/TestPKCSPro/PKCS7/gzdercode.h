@@ -13,7 +13,6 @@
 #include "asn1.h"
 #include "global_def.h"
 
-DWORD berEncodeSubjectName(BYTE * berSubjectName, DWORD *berSubjectNameLen, BYTE *cndata, DWORD cndata_len, BYTE *odata, DWORD odata_len, BYTE *oudata, DWORD oudata_len, BYTE *cdata, DWORD cdata_len, BYTE *ldata, DWORD ldata_len, BYTE *emaildata, DWORD emaildata_len);
-
+DWORD PackPKCS10(BYTE *pubkey, DWORD dwpubkey, BYTE *sign, DWORD dwSignlen, BYTE *berCertReq, DWORD *pdwberCertReqlen);
 
 #endif /* gzdercode_h */
