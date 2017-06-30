@@ -805,7 +805,7 @@ typedef enum X509KeyUsageFlags {
     XCN_CERT_DECIPHER_ONLY_KEY_USAGE      = ( 0x80 << 8 )
 } X509KeyUsageFlags;
  */
-DWORD berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsage, DWORD dwkeyUsage)
+DWORD berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage)
 {
     DWORD total = 0;
     DWORD len = 0; //0 or 128
@@ -818,6 +818,9 @@ DWORD berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsag
     BYTE *tmpBuf = NULL;
     
     BYTE keyUsage_OIDs[3] = {0x55, 0x1d, 0x0f};
+    
+    BYTE keyUsage[] = {0x05, 0xa0}; //XCN_CERT_DIGITAL_SIGNATURE_KEY_USAGE | XCN_CERT_KEY_ENCIPHERMENT_KEY_USAGE;
+    DWORD dwkeyUsagelen = sizeof(keyUsage);
     
     
     len = 0;
@@ -833,7 +836,7 @@ DWORD berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsag
     
     //
     
-    rc = ber_encode_BIT_STRING(TRUE, NULL, &total, keyUsage, dwkeyUsage);
+    rc = ber_encode_BIT_STRING(TRUE, NULL, &total, keyUsage, dwkeyUsagelen);
     if(rc != ERROR_SUCCESS)
     {
         goto error;
@@ -878,7 +881,7 @@ DWORD berAttributeKeyUsage(BYTE *berKeyUsage, DWORD *pberKeyUsage, BYTE *keyUsag
     memcpy(buf, tmp, len);
     free(tmp);
     
-    rc = ber_encode_BIT_STRING(FALSE, &tmp, &total, keyUsage, dwkeyUsage);
+    rc = ber_encode_BIT_STRING(FALSE, &tmp, &total, keyUsage, dwkeyUsagelen);
     if(rc != ERROR_SUCCESS)
     {
         goto error;
@@ -1043,11 +1046,92 @@ error:
 }
 
 //XCN_OID_ENHANCED_KEY_USAGE (2.5.29.37)
-void berAttributeEnhancedKeyUsage(BYTE *berEnhancedKeyUsage, DWORD *pberEnhancedKeyUsage)
+DWORD berAttributeEnhancedKeyUsage(BYTE *berEnhancedKeyUsage, DWORD *pberEnhancedKeyUsage)
 {
-    BYTE enhancedKeyUsage[3] = {0x55, 0x1d, 0x25};
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
     
     
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    
+    BYTE enhancedKeyUsage_OIDs[3] = {0x55, 0x1d, 0x25};
+    
+    len = 0;
+    total = 0;
+    
+    rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, enhancedKeyUsage_OIDs, sizeof(enhancedKeyUsage_OIDs));
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+
+    
+    
+    
+    
+    
+error:
+    
+    return rc;
+}
+
+DWORD berCertExtensions(BYTE *berCertExtension, DWORD *pberCertextensionlen)
+{
+    DWORD total = 0;
+    DWORD len = 0; //0 or 128
+    DWORD rc = ERROR_SUCCESS;
+    DWORD ber_seq_len = 0;
+    DWORD ber_set_len = 0;
+    
+    
+    BYTE *buf = NULL;
+    BYTE *tmp = NULL;
+    BYTE *tempbuf = NULL;
+    
+    
+    len = 0;
+    total = 0;
+    
+    BYTE certExtensions_OIDs[] = {0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x09, 0x0e}; //1.2.840.113549.1.9.14
+    
+    rc = ber_encode_OBJECT_IDENTIFIER(TRUE, NULL, &total, certExtensions_OIDs, sizeof(certExtensions_OIDs));
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    else
+        len += total;
+    
+    
+    
+    BYTE berKeyUsage[128] = {0};
+    DWORD dwberKeyUsagelen = sizeof(berKeyUsage);
+    
+    rc = berAttributeKeyUsage(berKeyUsage, &dwberKeyUsagelen);
+    if(rc != ERROR_SUCCESS)
+    {
+        goto error;
+    }
+    
+    
+    
+    
+    
+    
+error:
+    
+    if(buf)
+    {
+        free(buf);
+    }
+    
+    return rc;
 }
 
 

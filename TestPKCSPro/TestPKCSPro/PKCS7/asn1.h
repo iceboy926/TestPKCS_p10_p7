@@ -95,6 +95,12 @@ DWORD   ber_encode_SET(BOOL length_only,
                                 BYTE * data,
                                 DWORD data_len);
     
+DWORD  ber_encode_Optional(BOOL length_only,
+                             BYTE ** set,
+                             DWORD * set_len,
+                             BYTE * data,
+                             DWORD data_len);
+    
 DWORD   ber_decode_INTEGER(BYTE * ber_int,
                                BYTE ** data,
                                DWORD * data_len,
