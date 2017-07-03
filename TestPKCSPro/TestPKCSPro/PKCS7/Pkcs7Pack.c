@@ -164,7 +164,7 @@ unsigned long PackPKCS7(unsigned char *plainText, unsigned long plaintTextLen, u
             break;
     }
     
-    retcode = signData_SetData(plainText, (int)plaintTextLen);
+    retcode = signData_SetPlainData(plainText, (int)plaintTextLen);
         
     if(retcode <= 0)
     {
@@ -173,7 +173,7 @@ unsigned long PackPKCS7(unsigned char *plainText, unsigned long plaintTextLen, u
     
     if(nAlgId == M_SM2)
     {
-        //{bu yao wen wei shen me
+        //
         unsigned char Templates[72] = {
             0x30,0x46,0x02,0x21,0x00,
             0x66,0x66,0x28,0x87,0x63,0xCA,0xAC,0xC7,0x9C,0x54,0x37,0x65,0xAB,0xBB,0x52,0x70,
@@ -211,7 +211,7 @@ unsigned long PackPKCS7(unsigned char *plainText, unsigned long plaintTextLen, u
     unsigned char p7Buf[2048] = {0};
     pp = &p7Buf[0];
     
-    ulderlen = signData_Encode(&pp, (int)p7Len);
+    ulderlen = signData_BerEncode(&pp, (int)p7Len);
     
     if(ulderlen <= 0)
     {

@@ -503,7 +503,8 @@ ber_encode_OCTET_STRING( BOOL    length_only,
       return DC_ERROR_MEMORY_ALLOC;
    }
 
-   if (data_len < 128) {
+   if (data_len < 128)
+   {
       buf[0] = 0x04;       // primitive, OCTET STRING
       buf[1] = (BYTE)(data_len & 0xFF);
       memcpy( &buf[2], data, data_len );
@@ -513,7 +514,8 @@ ber_encode_OCTET_STRING( BOOL    length_only,
       return ERROR_SUCCESS;
    }
 
-   if (data_len < 256) {
+   if (data_len < 256)
+   {
       buf[0] = 0x04;       // primitive, OCTET STRING
       buf[1] = 0x81;       // length header -- 1 length octets
       buf[2] = (BYTE)(data_len & 0xFF);

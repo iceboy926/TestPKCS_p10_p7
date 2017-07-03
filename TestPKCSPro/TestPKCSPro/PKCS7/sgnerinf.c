@@ -99,7 +99,7 @@ int  signerInfo_adjustLen(  int inputLen)
 {
 	unsigned char _code[1024] = {0,};
 	int ret = 0;
-	int contentLen = 3;/*02 01 01*/
+	//int contentLen = 3;/*02 01 01*/
 	int i = inputLen;
 
 	i  = inputLen-3;
@@ -175,11 +175,23 @@ int  signerInfo_adjustLen(  int inputLen)
 	return ret;
 }
 
-//
-int signerInfo_Encode(unsigned char ** buf, int buflen)
+/*
+SignerInfo ::= SEQUENCE {
+    version Version,
+    issuerAndSerialNumber      IssuerAndSerialNumber,
+    digestAlgorithm            DigestAlgorithmIdentifier,
+        authenticatedAttributes    [0] IMPLICIT Attributes OPTIONAL,
+    digestEncryptionAlgorithm  DigestEncryptionAlgorithmIdentifier,
+    encryptedDigest             EncryptedDigest,
+        unauthenticatedAttributes  [1] IMPLICIT Attributes OPTIONAL }
+*/
+
+int signerInfo_BerEncode(unsigned char ** buf, int buflen)
 {
 	int ret = 0;
-	int i=0;int decrease=0;int adjust=0;
+	int i=0;
+    int decrease=0;
+    int adjust=0;
 	adjust = signerInfo_adjustLen( buflen);
 	if(adjust<=0)
 		return adjust;
@@ -189,7 +201,8 @@ int signerInfo_Encode(unsigned char ** buf, int buflen)
 	if( ret<=0){
 		return ret;
 	}
-
+    
+    //SEQUENCE OF
 	decrease = buflen;
 	*(*buf) = 0x30;
 	(*buf)++;
@@ -222,6 +235,7 @@ int signerInfo_Encode(unsigned char ** buf, int buflen)
 		decrease--;
 	}
 
+    //version
 	*(*buf) = 0x02;
 	(*buf)++;
 	decrease--;
@@ -232,125 +246,128 @@ int signerInfo_Encode(unsigned char ** buf, int buflen)
 	(*buf)++;
 	decrease--;
 
-
-	ret = signerCert_Encode( buf,decrease);
+    
+    //IssuerAndSerialNumber
+	ret = signerCert_Encode_SerialNumber( buf,decrease);
 	decrease-=ret;
 
+    
+    //DigestAlgorithmIdentifier
 	ret = signerInfo_GetDigestAlgo();
 	if(ret<=0)
 		return -_signer_algo_;
 
-	switch(ret){
-	case digest_md5_a:
-		{
-			i= (strlen((char*)_oid_md5)+1);
-			memcpy((*buf),_oid_md5,i  );
-			(*buf)+=i;
-			decrease-=i;
-		}
+	switch(ret)
+    {
+        case digest_md5_a:
+            {
+                i= (strlen((char *)_oid_md5)+1);
+                memcpy((*buf),_oid_md5,i  );
+                (*buf)+=i;
+                decrease-=i;
+            }
 
-		break;
-	case digest_sha1_a:
-		{
-			i= (strlen((char*)_oid_sha1)+1);
-			memcpy((*buf),_oid_sha1,i  );
-			(*buf)+=i;
-			decrease-=i;
-		}
-		break;
-	case digest_sha256_a:
-		{
-			i= (strlen((char*)_oid_sha256)+1);
-			memcpy((*buf),_oid_sha256,i  );
-			(*buf)+=i;
-			decrease-=i;
-		}
-		break;
-	case digest_sha384_a:
-		{
-			i = (strlen((char*)_oid_sha384)+1);
-			memcpy((*buf), _oid_sha384, i);
-			(*buf) += i;
-			decrease -= i;
-		}
-		break;
-	case digest_sha512_a:
-		{
-			i = (strlen((char*)_oid_sha512)+1);
-			memcpy((*buf), _oid_sha512, i);
-			(*buf) += i;
-			decrease -= i;
-		}
-		break;
-	case digest_sm3_a:
-		{
-			i = (strlen((char*)_oid_sm3)+1);
-			memcpy((*buf), _oid_sm3, i);
-			(*buf) += i;
-			decrease -= i;
-		}
-		break;
-	default:
-		return -_signer_algo_;
+            break;
+        case digest_sha1_a:
+            {
+                i= (strlen((char*)_oid_sha1)+1);
+                memcpy((*buf),_oid_sha1,i  );
+                (*buf)+=i;
+                decrease-=i;
+            }
+            break;
+        case digest_sha256_a:
+            {
+                i= (strlen((char*)_oid_sha256)+1);
+                memcpy((*buf),_oid_sha256,i  );
+                (*buf)+=i;
+                decrease-=i;
+            }
+            break;
+        case digest_sha384_a:
+            {
+                i = (strlen((char*)_oid_sha384)+1);
+                memcpy((*buf), _oid_sha384, i);
+                (*buf) += i;
+                decrease -= i;
+            }
+            break;
+        case digest_sha512_a:
+            {
+                i = (strlen((char*)_oid_sha512)+1);
+                memcpy((*buf), _oid_sha512, i);
+                (*buf) += i;
+                decrease -= i;
+            }
+            break;
+        case digest_sm3_a:
+            {
+                i = (strlen((char*)_oid_sm3)+1);
+                memcpy((*buf), _oid_sm3, i);
+                (*buf) += i;
+                decrease -= i;
+            }
+            break;
+        default:
+            return -_signer_algo_;
 	}
 
-	{
-		if(digest_sm3_a == ret)
-		{
-			i= (strlen((char*)_oid_sm2_sign)+1);
-			memcpy((*buf),_oid_sm2_sign,i  );
-		}
-		else
-		{
-			i= (strlen((char*)_oid_rsaEncrypt)+1);
-			memcpy((*buf),_oid_rsaEncrypt,i  );
-		}
-		(*buf)+=i;
-		decrease-=i;
-	}
-	{
-		ret = signerCert_adjustLen( signInfoSignLen, decrease);
-		if( ret<=0){
-			return ret;
-		}
+    //DigestEncryptionAlgorithmIdentifier
+    if(digest_sm3_a == ret)
+    {
+        i= (strlen((char*)_oid_sm2_sign)+1);
+        memcpy((*buf),_oid_sm2_sign,i  );
+    }
+    else
+    {
+        i= (strlen((char*)_oid_rsaEncrypt)+1);
+        memcpy((*buf),_oid_rsaEncrypt,i  );
+    }
+    (*buf)+=i;
+    decrease-=i;
 
-		*(*buf) = 0x04;
-		(*buf)++;
-		decrease--;
+    //EncryptedDigest
+    ret = signerCert_adjustLen( signInfoSignLen, decrease);
+    if( ret<=0){
+        return ret;
+    }
 
-		if(ret-signInfoSignLen == 2){
-			*(*buf) = signInfoSignLen;
-			(*buf)++;
-			decrease--;
-		}
-		else if(ret-signInfoSignLen == 3){
-			*(*buf) = 0x81;
-			(*buf)++;
-			decrease--;
-			*(*buf) = signInfoSignLen;
-			(*buf)++;
-			decrease--;
-		}
-		else if(ret-signInfoSignLen == 4){
-			*(*buf) = 0x82;
-			(*buf)++;
-			decrease--;
+    *(*buf) = 0x04;
+    (*buf)++;
+    decrease--;
 
-			*(*buf) = (signInfoSignLen>>8);
-			(*buf)++;
-			decrease--;
+    if(ret-signInfoSignLen == 2){
+        *(*buf) = signInfoSignLen;
+        (*buf)++;
+        decrease--;
+    }
+    else if(ret-signInfoSignLen == 3){
+        *(*buf) = 0x81;
+        (*buf)++;
+        decrease--;
+        *(*buf) = signInfoSignLen;
+        (*buf)++;
+        decrease--;
+    }
+    else if(ret-signInfoSignLen == 4){
+        *(*buf) = 0x82;
+        (*buf)++;
+        decrease--;
 
-			*(*buf) = (signInfoSignLen);
-			(*buf)++;
-			decrease--;
-		}
+        *(*buf) = (signInfoSignLen>>8);
+        (*buf)++;
+        decrease--;
 
-		i= signInfoSignLen;
-		memcpy((*buf),psignInfoSigned,i  );
-		(*buf)+=i;
-		decrease-=i;
+        *(*buf) = (signInfoSignLen);
+        (*buf)++;
+        decrease--;
+    }
 
-	}
+    i= signInfoSignLen;
+    memcpy((*buf),psignInfoSigned,i  );
+    (*buf)+=i;
+    decrease-=i;
+
 
 	ret = buflen-decrease;
 

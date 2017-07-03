@@ -102,7 +102,7 @@ static unsigned char _oid_sm2Encrypt[15] = {
 int signerInfo_adjustLen( int inputLen);
 
 //
-int signerInfo_Encode(unsigned char ** buf, int buflen);
+int signerInfo_BerEncode(unsigned char ** buf, int buflen);
 
 //
 int signerInfo_SetCert(unsigned char * dCert,int  dLen);

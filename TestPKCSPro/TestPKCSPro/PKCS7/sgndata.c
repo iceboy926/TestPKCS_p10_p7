@@ -7,16 +7,15 @@
 static unsigned char signedheader[12]= {
     0x06,0x09,0x2A,0x86,0x48,
     0x86,0xF7,0x0D,0x01,0x07,
-    0x02,0x00};
+    0x02,0x00};   //1.2.840.113549.1.7.2 pkcs-7-2 signdata oid
 static unsigned char datadheader[12]= {
     0x06,0x09,0x2A,0x86,0x48,
     0x86,0xF7,0x0D,0x01,0x07,
-    0x01,0x00};
+    0x01,0x00};  //1.2.840.113549.1.7.1  pkcs-7-1 data oid
 
 
-//_signerCert _certificates[_max_set_ref];
+
 int signCertcertLen = 0;
-//_SignerInfo _signers[_max_set_ref];
 int signCertsignerLen = 0;
 
 //签名的原文
@@ -33,6 +32,8 @@ int _EncodeSetDigests(unsigned char ** buf, int buflen);
 int signData_AddSigner(unsigned char * dCert,int  dLen,int algo,unsigned char * sSign,int  sLen)
 {
 	int ret=0;
+    
+    signCertsignerLen = 0;
 
 	if(signCertsignerLen>=_max_set_ref){
 		return -_overrun_ref;
@@ -58,29 +59,29 @@ int signData_AddSigner(unsigned char * dCert,int  dLen,int algo,unsigned char * 
 	ret = signCertsignerLen;
 	return ret;
 }
-//新增证书
-int signData_AddCert(unsigned char * dCert,int  dLen)
-{
-	int ret=0;
-	
-	if(signCertcertLen>=_max_set_ref){
-		return -_overrun_ref;
-	}
-	
-	ret = signerCert_SetCert(dCert,dLen);
-	if(ret<=0)
-	{
-		return ret;
-	}
-	signCertcertLen++;
-	ret = signCertcertLen;
-	return ret;
-}
+////新增证书
+//int signData_AddCert(unsigned char * dCert,int  dLen)
+//{
+//	int ret=0;
+//	
+//	if(signCertcertLen>=_max_set_ref){
+//		return -_overrun_ref;
+//	}
+//	
+//	ret = signerCert_SetCert(dCert,dLen);
+//	if(ret<=0)
+//	{
+//		return ret;
+//	}
+//	signCertcertLen++;
+//	ret = signCertcertLen;
+//	return ret;
+//}
 
 
 
 //设置数据
-int signData_SetData(unsigned char * dCert,int  dLen)
+int signData_SetPlainData(unsigned char * dCert,int  dLen)
 {
 	int ret = 0;
 	if(dCert == NULL){
@@ -100,26 +101,26 @@ int signData_SetData(unsigned char * dCert,int  dLen)
 	ret = signCertdataLen;
 	return ret;
 }
-
-int signData_GetData(unsigned char *dCert,int  dLen)
-{
-	int ret = 0;
-	
-	if(signCertpData == NULL){
-		return -_signer_memory_;
-	}
-	if(dLen< signCertdataLen){
-		return -_signer_io_;
-	}
-	
-	if(dCert == NULL){
-		return -_signer_io_;
-	}
-	
-	memcpy(dCert, signCertpData,signCertdataLen);
-	ret = signCertdataLen;
-	return ret;
-}
+//
+//int signData_GetPlainData(unsigned char *dCert,int  dLen)
+//{
+//	int ret = 0;
+//	
+//	if(signCertpData == NULL){
+//		return -_signer_memory_;
+//	}
+//	if(dLen< signCertdataLen){
+//		return -_signer_io_;
+//	}
+//	
+//	if(dCert == NULL){
+//		return -_signer_io_;
+//	}
+//	
+//	memcpy(dCert, signCertpData,signCertdataLen);
+//	ret = signCertdataLen;
+//	return ret;
+//}
 
 //
 
@@ -184,7 +185,7 @@ int _EncodeSetSigner(unsigned char ** buf, int buflen)
 	
 	for(i=0;i<signCertsignerLen;i++)
 	{
-		ret = signerInfo_Encode( buf, decrease);
+		ret = signerInfo_BerEncode( buf, decrease);
 		if(ret<=0){
 			return ret;
 		}
@@ -447,7 +448,7 @@ int _EncodeSetCerts(unsigned char ** buf, int buflen)
 		(*buf)++;
 		decrease--;
 	}
-//赋值	
+
 
 	for(i=0;i<signCertcertLen;i++)
 	{
@@ -607,131 +608,7 @@ int _EncodeData(unsigned char ** buf, int buflen)
 		(*buf)++;
 		decrease--;
 	}
-	else if(ret-a == 7){
-		*(*buf) = 0x85;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ret-a == 8){
-		*(*buf) = 0x86;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ret-a == 9){
-		*(*buf) = 0x87;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ret-a == 10){
-		*(*buf) = 0x88;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>56);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-	//赋值	
+	//赋值
 	
 	l = strlen((char*)datadheader);
 	memcpy((*buf),datadheader,l);
@@ -799,130 +676,6 @@ int _EncodeData(unsigned char ** buf, int buflen)
 		}
 		else if(ret-l == 6){
 			*(*buf) = 0x84;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l);
-			(*buf)++;
-			decrease--;
-		}
-		else if(ret-l == 7){
-			*(*buf) = 0x85;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>32);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l);
-			(*buf)++;
-			decrease--;
-		}
-		else if(ret-l == 8){
-			*(*buf) = 0x86;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>40);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>32);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l);
-			(*buf)++;
-			decrease--;
-		}
-		else if(ret-l == 9){
-			*(*buf) = 0x87;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>48);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>40);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>32);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l);
-			(*buf)++;
-			decrease--;
-		}
-		else if(ret-l == 10){
-			*(*buf) = 0x88;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>56);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>48);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>40);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (l>>32);
 			(*buf)++;
 			decrease--;
 
@@ -1016,131 +769,6 @@ int _EncodeData(unsigned char ** buf, int buflen)
 			(*buf)++;
 			decrease--;
 		}
-		else if(l-signCertdataLen == 7){
-			*(*buf) = 0x85;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>32);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen);
-			(*buf)++;
-			decrease--;
-		}
-		else if(l-signCertdataLen == 8){
-			*(*buf) = 0x86;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>40);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>32);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen);
-			(*buf)++;
-			decrease--;
-		}
-		else if(l-signCertdataLen == 9){
-			*(*buf) = 0x87;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>48);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>40);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>32);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen);
-			(*buf)++;
-			decrease--;
-		}
-		else if(l-signCertdataLen == 10){
-			*(*buf) = 0x88;
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>56);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>48);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>40);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>32);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>24);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>16);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen>>8);
-			(*buf)++;
-			decrease--;
-
-			*(*buf) = (signCertdataLen);
-			(*buf)++;
-			decrease--;
-		}
-
 		l = signCertdataLen;
 		memcpy((*buf),signCertpData,l);
 		(*buf)+=l;
@@ -1170,9 +798,25 @@ int _EncodeData(unsigned char ** buf, int buflen)
 
 }
 
+/*
+ 
+ SignedData ::= SEQUENCE
+ {
+ version            Version,
+ digestAlgorithms   DigestAlgorithmIdentifiers,
+ contentInfo        ContentInfo,
+ certificates
+    [0] IMPLICIT ExtendedCertificatesAndCertificates
+ OPTIONAL,
+    crls    [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+ signerInfos SignerInfos
+ }
+ 
+ */
+
 
 //编码
-int signData_Encode(unsigned char ** buf, int buflen)
+int signData_BerEncode(unsigned char ** buf, int buflen)
 {
 	int ret = 0;
 	int a=0;int l = buflen; int a0,al,as,ac;
@@ -1223,6 +867,8 @@ int signData_Encode(unsigned char ** buf, int buflen)
 	}
 	
 //////////////////////////////////////////////////////////////////////////
+    
+    //SEQUENCE signData
 	decrease = buflen;
 	*(*buf) = 0x30; 
 	(*buf)++;
@@ -1293,137 +939,14 @@ int signData_Encode(unsigned char ** buf, int buflen)
 		(*buf)++;
 		decrease--;
 	}
-	else if(ret-a == 7){
-		*(*buf) = 0x85;
-		(*buf)++;
-		decrease--;
 
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ret-a == 8){
-		*(*buf) = 0x86;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ret-a == 9){
-		*(*buf) = 0x87;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ret-a == 10){
-		*(*buf) = 0x88;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>56);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a);
-		(*buf)++;
-		decrease--;
-	}
-//////////////////////////////////////////////////////////////////////////
-
+    //signedData OBJECT IDENTIFIER ::= { pkcs-7 2 }
 	l = strlen((char*)signedheader);
 	memcpy((*buf),signedheader,l);
 	(*buf)+=l;
 	decrease-=l;
-//////////////////////////////////////////////////////////////////////////
+    
+    
 	*(*buf) = 0xA0; 
 	(*buf)++;
 	decrease--;
@@ -1492,130 +1015,8 @@ int signData_Encode(unsigned char ** buf, int buflen)
 		(*buf)++;
 		decrease--;
 	}
-	else if(al- a0 == 7){
-		*(*buf) = 0x85;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0);
-		(*buf)++;
-		decrease--;
-	}
-	else if(al- a0 == 8){
-		*(*buf) = 0x86;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0);
-		(*buf)++;
-		decrease--;
-	}
-	else if(al- a0 == 9){
-		*(*buf) = 0x87;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0);
-		(*buf)++;
-		decrease--;
-	}
-	else if(al- a0 == 10){
-		*(*buf) = 0x88;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>56);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (a0);
-		(*buf)++;
-		decrease--;
-	}
+    
+//////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 	*(*buf) = 0x30; 
@@ -1687,131 +1088,10 @@ int signData_Encode(unsigned char ** buf, int buflen)
 		(*buf)++;
 		decrease--;
 	}
-	else if(ac- as == 7){
-		*(*buf) = 0x85;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ac- as == 8){
-		*(*buf) = 0x86;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ac- as == 9){
-		*(*buf) = 0x87;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as);
-		(*buf)++;
-		decrease--;
-	}
-	else if(ac- as == 10){
-		*(*buf) = 0x88;
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>56);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>48);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>40);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>32);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>24);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>16);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as>>8);
-		(*buf)++;
-		decrease--;
-
-		*(*buf) = (as);
-		(*buf)++;
-		decrease--;
-	}
-//////////////////////////////////////////////////////////////////////////
+    
+/////////////////////////////////////////////////////////////////////////
+    
+    //version
 	*(*buf) = 0x02; 
 	(*buf)++;
 	decrease--;
@@ -1821,7 +1101,10 @@ int signData_Encode(unsigned char ** buf, int buflen)
 	*(*buf) = 0x01; 
 	(*buf)++;
 	decrease--;
+    
 //////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+    
 	ret = _EncodeSetDigests( buf,decrease);
 	if(ret<=0){
 		return ret;
@@ -1847,6 +1130,7 @@ int signData_Encode(unsigned char ** buf, int buflen)
 	decrease-=ret;
 	
 
+//////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 	ret = buflen-decrease;
 	

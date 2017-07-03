@@ -1086,6 +1086,7 @@ DWORD berCertExtensions(BYTE *berCertExtension, DWORD *pberCertextensionlen)
     DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
+    
     DWORD ber_seq_len = 0;
     DWORD ber_set_len = 0;
     
@@ -1118,6 +1119,7 @@ DWORD berCertExtensions(BYTE *berCertExtension, DWORD *pberCertextensionlen)
     {
         goto error;
     }
+    
     
     
     

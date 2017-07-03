@@ -162,7 +162,7 @@ int getID(void)
 
 
 //编码和解码
-int signerCert_Encode(unsigned char ** buf,int  bufLen)
+int signerCert_Encode_SerialNumber(unsigned char ** buf,int  bufLen)
 {
 	int ret = 0;
 	if(pID == NULL){
@@ -216,7 +216,10 @@ int  signerCert_adjustLen( int contentLen, int inputLen)
 	int i;
 	for(i=0;i<_max_encode_exponent;i++){
 		ret>>=8;
-		if(ret ==0){ break; }
+		if(ret ==0)
+        {
+            break;
+        }
 	}
 
 	if(i==0){
