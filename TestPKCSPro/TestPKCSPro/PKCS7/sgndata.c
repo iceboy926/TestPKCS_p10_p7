@@ -1105,24 +1105,28 @@ int signData_BerEncode(unsigned char ** buf, int buflen)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
     
+    //DigestAlgorithmIdentifiers
 	ret = _EncodeSetDigests( buf,decrease);
 	if(ret<=0){
 		return ret;
 	}
 	decrease-=ret;
 	
+    //ContentInfo
 	ret = _EncodeData( buf,decrease);
 	if(ret<=0){
 		return ret;
 	}
 	decrease-=ret;
 	
+    //certificates
 	ret = _EncodeSetCerts( buf,decrease);
 	if(ret<=0){
 		return ret;
 	}
 	decrease-=ret;
 	
+    //signerInfos
 	ret = _EncodeSetSigner( buf,decrease);
 	if(ret<=0){
 		return ret;
