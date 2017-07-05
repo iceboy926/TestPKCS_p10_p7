@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "gzdercode.h"
+#include "pkcs10Pack.h"
 #include "sgnerinf.h"
 
 

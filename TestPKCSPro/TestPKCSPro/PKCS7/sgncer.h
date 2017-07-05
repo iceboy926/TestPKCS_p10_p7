@@ -19,7 +19,7 @@ int signerCert_GetCert(unsigned char * dCert,int  dLen);
 	//编码和解码
 int signerCert_Encode_SerialNumber(unsigned char ** buf,int  bufLen);
 	//得到ID
-int signerCert_GetID(unsigned char * dCertID,int  dLen);
+int signerCert_Get_SerialNumber(unsigned char * dCertID,int  dLen);
 
 int signerCert_GetCertlen();
 

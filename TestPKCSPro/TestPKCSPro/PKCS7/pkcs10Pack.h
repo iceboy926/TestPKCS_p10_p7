@@ -6,8 +6,8 @@
 //  Copyright © 2017年 zuoyongyong. All rights reserved.
 //
 
-#ifndef gzdercode_h
-#define gzdercode_h
+#ifndef pkcs10pack_h
+#define pkcs10pack_h
 
 #include <stdio.h>
 #include "asn1.h"

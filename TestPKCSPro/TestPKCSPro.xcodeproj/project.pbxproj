@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A3226A7B1EE4F88F00EA7022 /* asn1.c in Sources */ = {isa = PBXBuildFile; fileRef = A3226A6B1EE4F88F00EA7022 /* asn1.c */; };
-		A3226A7C1EE4F88F00EA7022 /* gzdercode.c in Sources */ = {isa = PBXBuildFile; fileRef = A3226A6E1EE4F88F00EA7022 /* gzdercode.c */; };
+		A3226A7C1EE4F88F00EA7022 /* pkcs10Pack.c in Sources */ = {isa = PBXBuildFile; fileRef = A3226A6E1EE4F88F00EA7022 /* pkcs10Pack.c */; };
 		A3226A7D1EE4F88F00EA7022 /* MyBase64.c in Sources */ = {isa = PBXBuildFile; fileRef = A3226A701EE4F88F00EA7022 /* MyBase64.c */; };
 		A3226A7E1EE4F88F00EA7022 /* Pkcs7Pack.c in Sources */ = {isa = PBXBuildFile; fileRef = A3226A721EE4F88F00EA7022 /* Pkcs7Pack.c */; };
 		A3226A7F1EE4F88F00EA7022 /* sgncer.c in Sources */ = {isa = PBXBuildFile; fileRef = A3226A751EE4F88F00EA7022 /* sgncer.c */; };
@@ -37,8 +37,8 @@
 		A3226A6B1EE4F88F00EA7022 /* asn1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = asn1.c; sourceTree = "<group>"; };
 		A3226A6C1EE4F88F00EA7022 /* asn1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asn1.h; sourceTree = "<group>"; };
 		A3226A6D1EE4F88F00EA7022 /* global_def.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = global_def.h; sourceTree = "<group>"; };
-		A3226A6E1EE4F88F00EA7022 /* gzdercode.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = gzdercode.c; sourceTree = "<group>"; };
-		A3226A6F1EE4F88F00EA7022 /* gzdercode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gzdercode.h; sourceTree = "<group>"; };
+		A3226A6E1EE4F88F00EA7022 /* pkcs10Pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pkcs10Pack.c; sourceTree = "<group>"; };
+		A3226A6F1EE4F88F00EA7022 /* pkcs10Pack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pkcs10Pack.h; sourceTree = "<group>"; };
 		A3226A701EE4F88F00EA7022 /* MyBase64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MyBase64.c; sourceTree = "<group>"; };
 		A3226A711EE4F88F00EA7022 /* MyBase64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyBase64.h; sourceTree = "<group>"; };
 		A3226A721EE4F88F00EA7022 /* Pkcs7Pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Pkcs7Pack.c; sourceTree = "<group>"; };
@@ -63,6 +63,7 @@
 		A3A6F2671EE4F7780094CF17 /* TestPKCSProUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TestPKCSProUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3A6F26B1EE4F7780094CF17 /* TestPKCSProUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestPKCSProUITests.m; sourceTree = "<group>"; };
 		A3A6F26D1EE4F7780094CF17 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A3B60D301F0C776400FF41FC /* der.cer */ = {isa = PBXFileReference; lastKnownFileType = file; path = der.cer; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,13 +90,13 @@
 				A3226A6B1EE4F88F00EA7022 /* asn1.c */,
 				A3226A6C1EE4F88F00EA7022 /* asn1.h */,
 				A3226A6D1EE4F88F00EA7022 /* global_def.h */,
-				A3226A6E1EE4F88F00EA7022 /* gzdercode.c */,
-				A3226A6F1EE4F88F00EA7022 /* gzdercode.h */,
+				A3226A741EE4F88F00EA7022 /* platform_type_def.h */,
+				A3226A6E1EE4F88F00EA7022 /* pkcs10Pack.c */,
+				A3226A6F1EE4F88F00EA7022 /* pkcs10Pack.h */,
 				A3226A701EE4F88F00EA7022 /* MyBase64.c */,
 				A3226A711EE4F88F00EA7022 /* MyBase64.h */,
 				A3226A721EE4F88F00EA7022 /* Pkcs7Pack.c */,
 				A3226A731EE4F88F00EA7022 /* Pkcs7Pack.h */,
-				A3226A741EE4F88F00EA7022 /* platform_type_def.h */,
 				A3226A751EE4F88F00EA7022 /* sgncer.c */,
 				A3226A761EE4F88F00EA7022 /* sgncer.h */,
 				A3226A771EE4F88F00EA7022 /* sgndata.c */,
@@ -145,6 +146,7 @@
 		A3A6F2511EE4F7780094CF17 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				A3B60D301F0C776400FF41FC /* der.cer */,
 				A3A6F2521EE4F7780094CF17 /* main.m */,
 			);
 			name = "Supporting Files";
@@ -263,7 +265,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A3226A7C1EE4F88F00EA7022 /* gzdercode.c in Sources */,
+				A3226A7C1EE4F88F00EA7022 /* pkcs10Pack.c in Sources */,
 				A3226A811EE4F88F00EA7022 /* sgnerinf.c in Sources */,
 				A3226A801EE4F88F00EA7022 /* sgndata.c in Sources */,
 				A3226A7E1EE4F88F00EA7022 /* Pkcs7Pack.c in Sources */,

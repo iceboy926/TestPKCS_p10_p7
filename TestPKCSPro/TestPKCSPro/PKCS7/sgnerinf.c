@@ -104,7 +104,7 @@ int  signerInfo_adjustLen(  int inputLen)
 
 	i  = inputLen-3;
 
-	ret = signerCert_GetID( _code,1024);
+	ret = signerCert_Get_SerialNumber( _code,1024);
 	if(ret<=0){
 		return ret;
 	}

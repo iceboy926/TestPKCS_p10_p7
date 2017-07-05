@@ -98,7 +98,7 @@ int signerCert_GetCertlen()
 }
 
 
-int signerCert_GetID(unsigned char * dCert,int  dLen)
+int signerCert_Get_SerialNumber(unsigned char * dCert,int  dLen)
 {
 	int ret = 0;
 	
