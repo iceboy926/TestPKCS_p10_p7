@@ -1070,7 +1070,7 @@ DWORD berAttributeEnhancedKeyUsage(BYTE *berEnhancedKeyUsage, DWORD *pberEnhance
         goto error;
     }
     
-
+    
     
     
     
@@ -1126,6 +1126,8 @@ DWORD berCertExtensions(BYTE *berCertExtension, DWORD *pberCertextensionlen)
     
     
     
+    
+    
 error:
     
     if(buf)
@@ -1161,16 +1163,14 @@ error:
 
 DWORD berEncodeCertificationRequestInfo(BYTE *berCerReqInfo, DWORD *pberCerReqInfoLen, BYTE *berVersion, DWORD berVersionlen, BYTE *berSubjectName, DWORD berSubjectNameLen, BYTE *berSubjectPubkeyInfo, DWORD berSubjectPubKeyInfoLen, BYTE *berAttribute, DWORD berAttributeLen)
 {
-    DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
     DWORD ber_seq_len = 0;
-    DWORD ber_set_len = 0;
     
     
     BYTE *buf = NULL;
     BYTE *tmp = NULL;
-    BYTE *tempbuf = NULL;
+
     
     if(NULL == berCerReqInfo || NULL == pberCerReqInfoLen || NULL == berVersion || NULL == berSubjectName
        || NULL == berSubjectPubkeyInfo)
@@ -1246,11 +1246,10 @@ DWORD berEncodeSignature(BYTE *berSignature, DWORD *pberSignaturelen, BYTE *sign
     DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
-    DWORD ber_seq_len = 0;
     
     BYTE *buf = NULL;
     BYTE *tmp = NULL;
-    BYTE *tempbuf = NULL;
+    
     BYTE  tmpsignData[128] = {0};
     DWORD dwtmpsignDatalen = sizeof(tmpsignData);
     
@@ -1328,7 +1327,6 @@ error:
 
 DWORD berEncodeCertReq(BYTE *berCertReq, DWORD *pberCerReqLen, BYTE *berCertReqInfo, DWORD berCertRegInfoLen, BYTE *berAlg, DWORD berAlgLen, BYTE *berSign, DWORD berSignLen)
 {
-    DWORD total = 0;
     DWORD len = 0; //0 or 128
     DWORD rc = ERROR_SUCCESS;
     DWORD ber_seq_len = 0;
@@ -1415,22 +1413,22 @@ DWORD PackPKCS10(BYTE *pubkey, DWORD dwpubkey, BYTE *sign, DWORD dwSignlen, BYTE
     DWORD dwberSubjectNameLen = sizeof(berSubjectName);
     
     BYTE cndata[] = "zuoyy";
-    DWORD cndata_len = strlen(cndata);
+    DWORD cndata_len = strlen((const char *)cndata);
     
     BYTE odata[] = "testorg";
-    DWORD odata_len = strlen(odata);
+    DWORD odata_len = strlen((const char *)odata);
     
     BYTE oudata[] = "testorgunit";
-    DWORD oudata_len = strlen(oudata);
+    DWORD oudata_len = strlen((const char *)oudata);
     
     BYTE cdata[] = "cn";
-    DWORD cdata_len = strlen(cdata);
+    DWORD cdata_len = strlen((const char *)cdata);
     
     BYTE emaildata[] = "zuoyy@gmrz-bj.com";
-    DWORD emaildata_len = strlen(emaildata);
+    DWORD emaildata_len = strlen((const char *)emaildata);
     
     BYTE ldata[] = "bj";
-    DWORD ldata_len = strlen(ldata);
+    DWORD ldata_len = strlen((const char *)ldata);
     
     
     

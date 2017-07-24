@@ -10,18 +10,13 @@
 #include "Pkcs7Pack.h"
 
 
-
-
 unsigned long PackPKCS7(unsigned char *plainText, unsigned long plaintTextLen, unsigned char *certData, unsigned long certDataLen, unsigned long nAlgId, unsigned char *signData, unsigned long signDataLen, unsigned char *szOutData, unsigned long *pulOutDataLen)
 {
-    unsigned long uloutData = 0;
     
     int retcode = 0;
     ULONG p7Len = 0;
     unsigned char * pp = NULL;
-    int ret = 0;
-    
-    UINT b64len = 0;
+
     unsigned int alg_Id = 0;
     
     unsigned char szSignData[1024] = {0};

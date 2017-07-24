@@ -17,11 +17,7 @@
 extern "C" {
 #endif
 
-    //long PackCert2P7(std::string strTLV, std::vector<unsigned char> vCertValue, std::vector<unsigned char> vSignData, ULONG nAlgId, std::string &strBase64);
-    
     unsigned long PackPKCS7(unsigned char *plainText, unsigned long plaintTextLen, unsigned char *certData, unsigned long certDataLen, unsigned long nAlgId,unsigned char *signData, unsigned long signDataLen, unsigned char *szOutData, unsigned long *pulOutDataLen);
-    
-    //long verifyPKCS7(std::string strpcks7);
 
 #ifdef __cplusplus
 }
