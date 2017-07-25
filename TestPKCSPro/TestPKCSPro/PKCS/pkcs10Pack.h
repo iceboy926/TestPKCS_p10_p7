@@ -10,7 +10,7 @@
 #define pkcs10pack_h
 
 #include <stdio.h>
-#include "asn1.h"
+#include "asn.h"
 #include "global_def.h"
 
 DWORD PackPKCS10(BYTE *pubkey, DWORD dwpubkey, BYTE *sign, DWORD dwSignlen, BYTE *berCertReq, DWORD *pdwberCertReqlen);
